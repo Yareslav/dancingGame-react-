@@ -154,6 +154,7 @@ function Game() {
       <audio src />
       <Canvas/>
       <GameLine state={state} bestRecord={data.current.bestRecord}/>
+      <GameField/>
     </div>
   );
 
@@ -201,57 +202,115 @@ function GameLine({state,bestRecord}) {
 
 }
 function Canvas() {
-  const createCanvas ={
-    canvas:document.querySelector(`canvas`),
-    notesMass:[],
-    start: ()=>{
+  class createCanvas {
+    canvas=document.querySelector(`canvas`)
+    notesMass=[]
+    imgWidth;
+    imgHeight;
+    interval;
+    hardness={
+      generateFrequency:14,
+      speed:60,
+      minGenerateNum:3,
+      maxGenerateNum:7,
+    };
+    ctx=this.canvas.getContext(`2d`)
+    constructor(){
       this.resize();
+      this.setProcess();
       $(window).on(`resize`,()=>this.resize());
-      setInterval(()=>{
-        this.generate();
-        this.fall();
-      },50);
-    },
-    resize:()=> {
+    }
+    setProcess() {
+      this.interval= setInterval(()=>{
+        var felt=this.hardness.generateFrequency;
+        if (felt==this.hardness.generateFrequency) {
+          this.generate();
+          this.fall();
+          felt=0;
+        } else {
+          felt++;
+          this.fall();
+        }
+      },this.hardness.speed);
+    }
+    resize() {
       this.canvas.width=$(window).width()
       this.canvas.height=$(window).height()
-    },
+      if ($(window).width()>=550) {
+        this.imgWidth=15;
+        this.imgHeight=35;
+      } else {
+        this.imgWidth=10;
+        this.imgHeight=23;
+      }
+      this.notesMass=[];
+    }
     generate() {
-      var generateNum=random(4,7) ,locations=[];
+      var locations=[] , colorMass=["red",`yellow`,`purple`,`blue`];
+      const min=this.hardness.minGenerateNum , max=this.hardness.maxGenerateNum , width=(this.canvas.width>=550);
+      var generateNum=(width) ? random(min,max) : random(min-2,max-2);
+      const NOTESZE =width ? 20 : 14;
         for (let i=0;i<generateNum;i++) {
           var y;
           do {
-            y=$(window).width()
-          } while (locations.includes(y))
+            y=random(0,this.canvas.width-NOTESZE)
+          } while (fillGaps(y))
           locations.push(y)
         }
-    },
+        function fillGaps(y) {
+          var toReturn=false;
+          locations.forEach((elem)=>{
+            if ((y>elem && y<=elem+NOTESZE) || (y<elem && y>=elem-NOTESZE) || y==elem) toReturn=true;
+          })
+          return toReturn;
+        }
+        locations.forEach((elem)=>{
+          var note={
+            y:0,
+            x:elem,
+          };
+          note.type=colorMass[random(0,3)]+`Note`;
+          note.index=this.notesMass.length;
+          note.width=this.imgWidth;
+          note.height=this.imgHeight;
+          this.notesMass.push(note)
+        })
+    }
     fall() {
-      var ctx=this.canvas.getContext(`2d`);
-    }
-    }
-  class Note {
-    height=35;
-    width=15;
-    y=0;
-    constructor(x) {
-      this.type=this.colorMass[random(0,4)]+`Note`;
-      this.x=x;
-      this.resize();
-      $(window).on(`resize`,()=>this.resize())
-    }
-    resize(){
-      if ($(window).width()<=550) {
-        this.height=24;
-        this.width=0.44*this.height;
-      } else if (this.height==24 && $(window).width()>550) {
-        this.height=36;
-        this.width=16;
+      var changeIndex=false;
+      this.ctx.beginPath()
+      this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
+      this.notesMass.forEach((elem)=>{
+        if (elem.y>this.canvas.height) {
+          delete this.notesMass[elem.index];
+          changeIndex=true;
+          return;
+        }
+        elem.y+=8;
+        var image=new Image(elem.width,elem.height);
+        image.src=convert(elem.type);
+        image.onload=()=>{
+          this.ctx.drawImage(image,elem.x,elem.y);
+        }
+      })
+      this.ctx.closePath()
+      if (changeIndex) {
+        this.notesMass=this.notesMass.filter((elem)=>{if (elem) return elem})
       }
+      this.notesMass.reverse().forEach((elem,ind)=>{
+        elem.index=ind;
+      })
     }
   }
-  useEffect(()=>{createCanvas.start()},[])
+  //useEffect(()=>{new createCanvas()},[])
   return (
     <canvas/>
+  )
+}
+function GameField() {
+  return (
+    <>
+
+    </>
   )
 }
