@@ -8,6 +8,7 @@ import {
   useReducer,
   useContext,
   useRef,
+  createContext,
 } from "react";
 import { MainApp, convert, random } from "./App";
 export default function Game() {
@@ -203,6 +204,18 @@ function Canvas() {
 }
 function GameField({ state, gameType }) {
   var gameStat = useRef({});
+  const colors = {
+    red: `231, 76, 60`,
+    purple: `108, 52, 131`,
+    yellow: `237, 187, 153`,
+    blue: `36, 113, 163`,
+  };
+  const keys = [
+    [49, 35, 67],
+    [50, 87, 38],
+    [51, 83, 40],
+    [52, 68, 39],
+  ];
   useMemo(() => {
     var _ = [
       {
@@ -219,52 +232,12 @@ function GameField({ state, gameType }) {
         });
       }
     });
-    var colors = {
-      red: `231, 76, 60`,
-      purple: `108, 52, 131`,
-      yellow: `237, 187, 153`,
-      blue: `36, 113, 163`,
-    };
     gameStat.current.lines = [];
-    Object.entries(colors).forEach((elem) => {
-      gameStat.current.lines.push(
-        <div className="game__column center">
-          <div
-            className="game__circle  center"
-            type={elem[0]}
-            onClick={() => circleClick(elem[0])}
-            style={{ background: `rgba(${elem[1]},0.2)` }}
-          >
-            <div style={{ background: `rgb(${elem[1]})` }}></div>
-          </div>
-        </div>
-      );
+    Object.entries(colors).forEach((elem,ind) => {
+      gameStat.current.lines.push(<FieldColumn color={elem[1]} key={keys[ind]}/>);
     });
   }, []);
-  useEffect(() => {
-    var keys = [
-      [49, 35, 67, `red`],
-      [50, 87, 38, `purple`],
-      [51, 83, 40, `yellow`],
-      [52, 68, 39, `blue`],
-    ];
-    $(window).on(`keyup`, (eve) => {
-      var key = eve.which;
-      keys.forEach((elem) => {
-        if (key == elem[0] || key == elem[1] || key == elem[2])
-          circleClick(elem[3]);
-      });
-		});
-		$(window).on(`resize`,()=>{
-			$(`.game__circle`).each(function () {
-				$(this).css({height:})
-			})
-		})
-  }, []);
   gameStat = gameStat.current;
-  function circleClick(type) {
-    console.log(type);
-  }
   return (
     <div className="game__field beet">
       <img className="game__gif" src={convert(gameStat.decorGif1, "gif")} />
@@ -278,5 +251,37 @@ function GameField({ state, gameType }) {
       </div>
       <img src className="game__gif" src={convert(gameStat.decorGif2, "gif")} />
     </div>
+  );
+}
+function FieldColumn(props) {
+  return (
+    <div className="game__column center">
+      <CirclePress {...props}/>
+    </div>
+  )
+}
+function CirclePress({color,key}) {
+  var its=useRef();
+  useEffect(() => {
+    $(window).on(`keyup`, (eve) => {
+        if (eve.which == key[0] || eve.which == key[1] || eve.which == key[2]) circleClick();
+    });
+    changeHeight();
+    $(window).on(`resize`,changeHeight)
+  }, []);
+  function circleClick() {
+  }
+  function changeHeight() {
+    $(its.current).css({height:$(its.current).width()*0.49})
+  }
+  return (
+    <div
+    className="game__circle  center"
+    onClick={circleClick}
+    ref={its}
+    style={{ background: `rgba(${color},0.2)` }}
+  >
+    <div style={{ background: `rgb(${color})` }}></div>
+  </div>
   );
 }

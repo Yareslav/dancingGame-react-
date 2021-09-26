@@ -124,3 +124,4 @@ function SelectGameMode({ elem, selected, ind }) {
     </div>
   );
 }
+console.log(MainApp);

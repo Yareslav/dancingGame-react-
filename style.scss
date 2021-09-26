@@ -261,6 +261,12 @@ body{
 			border:1px solid red;
 			gap:10px;
 			height: 80%;
+			@media(max-width:1000px) {
+				width: 70%;
+			}
+			@media(max-width:650px) {
+				width: calc(100% - 20px);
+			}
 		}
 
 		// .game__gif
@@ -279,6 +285,7 @@ body{
 		// .game__background
 
 		&__background {
+			top: 0;
 			width:100%;
 			position: absolute;
 		}
@@ -294,7 +301,6 @@ body{
 			height:100%;
 			width: 25%;
 			border:1px solid blue;
-			justify-content: stretch;
 		}
 		&__take {
 		}
@@ -310,9 +316,8 @@ body{
 			position: absolute;
 			bottom: 0px;
 			border-radius: 50%;
-			margin-bottom: 10%;
+			margin-bottom: 20%;
 			width:calc(100% - 5px);
-			height: 70px;
 			& > div{
 				width: 70%;
 				height: 70%;
