@@ -11,6 +11,7 @@ import {
   createContext,
 } from "react";
 import { MainApp, convert, random } from "./App";
+const MainGame=createContext()
 export default function Game() {
   const propsData = useContext(MainApp);
   var data = useRef({});
@@ -38,16 +39,19 @@ export default function Game() {
     )[value];
   }, []);
   return (
-    <div className="game beet2">
+    <MainGame.Provider value={[state,setState]}>
+      <div className="game beet2">
       <audio src />
       <Canvas />
-      <GameLine state={state} bestRecord={data.current.bestRecord} />
+      <GameLine bestRecord={data.current.bestRecord} />
       <h4 class="game__title">{data.current.type}</h4>
-      <GameField state={state} gameType={data.current.type} />
+      <GameField gameType={data.current.type} />
     </div>
+    </MainGame.Provider>
   );
 }
-function GameLine({ state, bestRecord }) {
+function GameLine({bestRecord }) {
+  const [state,setState]=useContext(MainGame);
   var [controlsIsDown, setControlsIsDown] = useState(false);
   useEffect(() => {
     $(window).on(`resize`, resize);
@@ -202,69 +206,24 @@ function Canvas() {
   //useEffect(()=>{new createCanvas()},[])
   return <canvas />;
 }
-function GameField({ state, gameType }) {
-  var gameStat = useRef({});
-  const colors = {
-    red: `231, 76, 60`,
-    purple: `108, 52, 131`,
-    yellow: `237, 187, 153`,
-    blue: `36, 113, 163`,
-  };
-  const keys = [
-    [49, 35, 67],
-    [50, 87, 38],
-    [51, 83, 40],
-    [52, 68, 39],
-  ];
-  useMemo(() => {
-    var _ = [
-      {
-        type: "Sunny Beach",
-        decorGif1: `dancingSpongeBob`,
-        decorGif2: `dancingPatric`,
-        fonImg: "beach",
-      },
-    ].forEach((obj) => {
-      if (gameType == obj.type) {
-        Object.entries(obj).forEach((elem, ind) => {
-          if (ind == 0) return;
-          gameStat.current[elem[0]] = elem[1];
-        });
-      }
-    });
-    gameStat.current.lines = [];
-    Object.entries(colors).forEach((elem,ind) => {
-      gameStat.current.lines.push(<FieldColumn color={elem[1]} key={keys[ind]}/>);
-    });
-  }, []);
-  gameStat = gameStat.current;
+function FieldColumn({color,keys,arrowStatus}) {
+  var [state,setState]=useState({arrowMass:arrowStatus.mass})
+  function deleteComponent() {
+    state.arrowMass.splice(this,1);
+    setState({...state})
+  }
   return (
-    <div className="game__field beet">
-      <img className="game__gif" src={convert(gameStat.decorGif1, "gif")} />
-      <div className="game__process beet">
-        <img
-          src
-          className="game__background"
-          src={convert(gameStat.fonImg, "gif")}
-        />
-        <div className="game__columns beet">{gameStat.lines}</div>
-      </div>
-      <img src className="game__gif" src={convert(gameStat.decorGif2, "gif")} />
-    </div>
-  );
-}
-function FieldColumn(props) {
-  return (
-    <div className="game__column center">
-      <CirclePress {...props}/>
+    <div className="game__column">
+      {state.arrowMass.map((elem,ind)=><Arrow type={arrowStatus.type+"Arrow"} deleteComponent={deleteComponent.bind(ind)}/>)}
+      <CirclePress color={color} keys={keys}/>
     </div>
   )
 }
-function CirclePress({color,key}) {
+function CirclePress({color,keys}) {
   var its=useRef();
   useEffect(() => {
     $(window).on(`keyup`, (eve) => {
-        if (eve.which == key[0] || eve.which == key[1] || eve.which == key[2]) circleClick();
+        if (eve.which == keys[0] || eve.which == keys[1] || eve.which == keys[2]) circleClick();
     });
     changeHeight();
     $(window).on(`resize`,changeHeight)
@@ -284,4 +243,128 @@ function CirclePress({color,key}) {
     <div style={{ background: `rgb(${color})` }}></div>
   </div>
   );
+}
+function GameMark({type,status}) {
+
+  return (
+    <h2 className="game__mark">
+      hello world
+    </h2>
+  )
+}
+function GameField({gameType}) {
+  var gameStat = useRef({}).current , processControl=useRef().current;
+  var [columns,setColumns]=useState([]);
+  class Process {
+    interval;
+    period;
+    constructor({speed}) {
+      this.speed=speed;
+      this.arrowMass=[];
+      this.generatingPeriod=5;
+      this.period=this.generatingPeriod;
+      Object.entries(gameStat.colors).forEach((elem,ind) => {
+        this.arrowMass.push({type:elem[0],mass:[]})
+      });
+      this.setColumns();
+      this.start();
+    }
+    start() {
+      this.interval=setInterval(()=>this.render(),this.speed)
+    };
+    render(){
+      if (this.period==this.generatingPeriod) {
+        this.generate();
+        this.period=0;
+      } else this.period++;
+      this.setColumns()
+    };
+    generate() {
+      var line=random(0,3);
+      this.arrowMass[line].mass.push(<Arrow/>)
+    };
+    stop() {
+      clearInterval(this.interval);
+    };
+    setColumns() {
+      columns=[];
+      Object.entries(gameStat.colors).forEach((elem,ind) => {
+        columns.push(<FieldColumn color={elem[1]} keys={gameStat.keys[ind]} arrowStatus={this.arrowMass[ind]}/>);
+      });
+      setColumns([...columns]);
+    }
+  }
+  useMemo(() => {
+    var _ = [
+      {
+        type: "Sunny Beach",
+        decorGif1: `dancingSpongeBob`,
+        decorGif2: `dancingPatric`,
+        fonImg: "beach",
+        speed:80
+      },
+    ].forEach((obj) => {
+      if (gameType == obj.type) {
+        Object.entries(obj).forEach((elem, ind) => {
+          if (ind == 0) return;
+          gameStat[elem[0]] = elem[1];
+        });
+      }
+    });
+    gameStat.colors = {
+      red: `231, 76, 60`,
+      green: `7,194,18`,
+      orange: `243,182,17`,
+      blue: `36, 113, 163`,
+    };
+    gameStat.keys= [
+      [49, 35, 67],
+      [50, 87, 38],
+      [51, 83, 40],
+      [52, 68, 39],
+    ];
+    processControl=new Process(gameStat);
+  }, []);
+  return (
+    <div className="game__field beet" onMouseDown={(eve)=>eve.preventDefault()}>
+      <img className="game__gif" src={convert(gameStat.decorGif1, "gif")} />
+      <div className="game__process beet" style={{background:`url(${convert(gameStat.fonImg, "gif")})`}}>
+      <GameMark/>
+        <div className="game__columns beet">{columns}</div>
+      </div>
+      <img src className="game__gif" src={convert(gameStat.decorGif2, "gif")} />
+    </div>
+  );
+}
+function Arrow({type,deleteComponent}) {
+  var [state,setState]=useState({y:0,fallen:false,destroyed:false});
+  var animatedObject=useRef();
+  function fallingProcess() {
+    if (state.destroyed || state.fallen) return;
+    state.y+=8;
+    if (state.y>$(`.game__process`).height()) {
+      setState({...state,destroyed:true})
+    }
+  }
+  const columnWidth=$(`.game__column`).width();
+  function click() {}
+  fallingProcess();
+  useEffect(()=>{
+    if (!state.destroyed) return;
+    const elem=$(animatedObject.current);
+    elem.animate({width:columnWidth,height:columnWidth},250,()=>{
+      elem.animate({width:0,height:0},250)
+    })
+  })
+  if (!state.destroyed && !state.fallen) {
+    return (
+      <img src={convert(type)} style={{top:state.y}} className="game__arrow" onClick={click} draggable="false"/>
+    )
+  }
+  else if (state.fallen) {
+    deleteComponent();
+  } else {
+    setTimeout(()=>deleteComponent(),1500);
+    return <p style={{top:state.y+columnWidth/2}} ref={animatedObject} className="explosion"></p>;
+  }
 }

@@ -39,14 +39,17 @@ function Form() {
     {
       img: "beach",
       name: `Sunny Beach`,
+      speed:1
     },
     {
       img: "dance",
       name: `Dancing Scene`,
+      speed:1.2
     },
     {
       img: `retroCar`,
       name: `Cyber city`,
+      speed:1.3
     },
   ].forEach((elem, ind) => {
     maps.push(
@@ -124,4 +127,3 @@ function SelectGameMode({ elem, selected, ind }) {
     </div>
   );
 }
-console.log(MainApp);
