@@ -20,7 +20,7 @@ export default function App() {
   return (
     <MainApp.Provider value={{ state, setActive }}>
       {/* {state.active ? <Form /> : <Game />} */}
-      <Game />
+      <Game/>
     </MainApp.Provider>
   );
 }

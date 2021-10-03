@@ -50,7 +50,7 @@ export default function Game() {
     </MainGame.Provider>
   );
 }
-function GameLine({bestRecord }) {
+function GameLine({bestRecord}) {
   const [state,setState]=useContext(MainGame);
   var [controlsIsDown, setControlsIsDown] = useState(false);
   useEffect(() => {
@@ -143,11 +143,11 @@ function Canvas() {
         max = this.hardness.maxGenerateNum,
         width = this.canvas.width >= 550;
       var generateNum = width ? random(min, max) : random(min - 2, max - 2);
-      const NOTESZE = width ? 20 : 14;
+      const NOTE__SZE = width ? 20 : 14;
       for (let i = 0; i < generateNum; i++) {
         var y;
         do {
-          y = random(0, this.canvas.width - NOTESZE);
+          y = random(0, this.canvas.width - NOTE__SZE);
         } while (fillGaps(y));
         locations.push(y);
       }
@@ -155,8 +155,8 @@ function Canvas() {
         var toReturn = false;
         locations.forEach((elem) => {
           if (
-            (y > elem && y <= elem + NOTESZE) ||
-            (y < elem && y >= elem - NOTESZE) ||
+            (y > elem && y <= elem + NOTE__SZE) ||
+            (y < elem && y >= elem - NOTE__SZE) ||
             y == elem
           )
             toReturn = true;
@@ -206,37 +206,19 @@ function Canvas() {
   //useEffect(()=>{new createCanvas()},[])
   return <canvas />;
 }
-function FieldColumn({color,keys,arrowStatus}) {
-  var [state,setState]=useState({arrowMass:arrowStatus.mass})
-  function deleteComponent() {
-    state.arrowMass.splice(this,1);
-    setState({...state})
-  }
-  return (
-    <div className="game__column">
-      {state.arrowMass.map((elem,ind)=><Arrow type={arrowStatus.type+"Arrow"} deleteComponent={deleteComponent.bind(ind)}/>)}
-      <CirclePress color={color} keys={keys}/>
-    </div>
-  )
-}
-function CirclePress({color,keys}) {
+function CirclePress({color,state,setState}) {
   var its=useRef();
   useEffect(() => {
-    $(window).on(`keyup`, (eve) => {
-        if (eve.which == keys[0] || eve.which == keys[1] || eve.which == keys[2]) circleClick();
-    });
     changeHeight();
     $(window).on(`resize`,changeHeight)
   }, []);
-  function circleClick() {
-  }
   function changeHeight() {
-    $(its.current).css({height:$(its.current).width()*0.49})
+    $(its.current).css({height:$(its.current).width()*0.49});
+    setState({...state,circleY:$(its.current).offset().top-$(`.game__field`).offset().top})
   }
   return (
     <div
     className="game__circle  center"
-    onClick={circleClick}
     ref={its}
     style={{ background: `rgba(${color},0.2)` }}
   >
@@ -261,7 +243,7 @@ function GameField({gameType}) {
     constructor({speed}) {
       this.speed=speed;
       this.arrowMass=[];
-      this.generatingPeriod=5;
+      this.generatingPeriod=15;
       this.period=this.generatingPeriod;
       Object.entries(gameStat.colors).forEach((elem,ind) => {
         this.arrowMass.push({type:elem[0],mass:[]})
@@ -280,8 +262,8 @@ function GameField({gameType}) {
       this.setColumns()
     };
     generate() {
-      var line=random(0,3);
-      this.arrowMass[line].mass.push(<Arrow/>)
+      //var line=random(0,3);
+      this.arrowMass[0].mass.push(<Arrow/>)
     };
     stop() {
       clearInterval(this.interval);
@@ -289,10 +271,10 @@ function GameField({gameType}) {
     setColumns() {
       columns=[];
       Object.entries(gameStat.colors).forEach((elem,ind) => {
-        columns.push(<FieldColumn color={elem[1]} keys={gameStat.keys[ind]} arrowStatus={this.arrowMass[ind]}/>);
+        columns.push(<FieldColumn color={elem[1]} keys={gameStat.keys[ind]} arrowStatus={this.arrowMass[ind]} setColumns={setColumns}/>);
       });
       setColumns([...columns]);
-    }
+    };
   }
   useMemo(() => {
     var _ = [
@@ -303,6 +285,12 @@ function GameField({gameType}) {
         fonImg: "beach",
         speed:80
       },
+      {
+        type:"Dancing Scene",
+        decorGif1:`discoBall`,
+        decorGif2:`dancingMan`,
+        fonImg:``
+      }
     ].forEach((obj) => {
       if (gameType == obj.type) {
         Object.entries(obj).forEach((elem, ind) => {
@@ -336,35 +324,63 @@ function GameField({gameType}) {
     </div>
   );
 }
-function Arrow({type,deleteComponent}) {
-  var [state,setState]=useState({y:0,fallen:false,destroyed:false});
+function FieldColumn({color,keys,arrowStatus,setColumns}) {
+  var [state,setState]=useState({});
+  const arrowMass=arrowStatus.mass;
+  function arrowClick(y) {
+
+  }
+  function deleteComponent() {
+    arrowMass.splice(this,1);
+  }
+  useEffect(()=>{
+    $(window).on(`keyup`, (eve) => {
+      if (eve.which == keys[0] || eve.which == keys[1] || eve.which == keys[2]) arrowClick();
+    });
+  },[]);
+  return (
+    <div className="game__column">
+      {arrowMass.map((elem,ind)=><Arrow type={arrowStatus.type+"Arrow"} arrowClick={arrowClick} deleteComponent={deleteComponent.bind(ind)}/>)}
+      <CirclePress color={color} {...{state,setState}}/>
+    </div>
+  )
+}
+function Arrow({type,deleteComponent,arrowClick}) {
+  var [state,setState]=useState({y:0,fallen:false,destroyed:false,ignore:false});
   var animatedObject=useRef();
+  const columnWidth=$(`.game__column`).width();
   function fallingProcess() {
     if (state.destroyed || state.fallen) return;
     state.y+=8;
     if (state.y>$(`.game__process`).height()) {
-      setState({...state,destroyed:true})
+      setState({...state,fallen:true})
     }
   }
-  const columnWidth=$(`.game__column`).width();
+  function render() {
+    if (!state.destroyed && !state.fallen) {
+      return (
+        <img src={convert(type)} style={{top:state.y}} className="game__arrow" onClick={()=>arrowClick(state.y)} draggable="false"/>
+      )
+    }
+    else if (state.fallen && !state.ignore) {
+      deleteComponent();
+      state.ignore=true;
+      return null;
+    }
+    else {
+       if (!state.ignore) setTimeout(()=>deleteComponent(),1500);
+      return <p style={{top:state.y+columnWidth/2}} ref={animatedObject} className="explosion"></p>;
+    }
+  }
   function click() {}
-  fallingProcess();
   useEffect(()=>{
-    if (!state.destroyed) return;
+    if (!state.destroyed || !state.ignore) return;
+    state.ignore=true;
     const elem=$(animatedObject.current);
     elem.animate({width:columnWidth,height:columnWidth},250,()=>{
       elem.animate({width:0,height:0},250)
     })
   })
-  if (!state.destroyed && !state.fallen) {
-    return (
-      <img src={convert(type)} style={{top:state.y}} className="game__arrow" onClick={click} draggable="false"/>
-    )
-  }
-  else if (state.fallen) {
-    deleteComponent();
-  } else {
-    setTimeout(()=>deleteComponent(),1500);
-    return <p style={{top:state.y+columnWidth/2}} ref={animatedObject} className="explosion"></p>;
-  }
+  fallingProcess();
+  return render();
 }
