@@ -312,13 +312,17 @@ body{
 			z-index: 2;
 			height: 15%;
 			cursor: url("./images/note.png") ,  auto;
+			max-height: 90px;
+			@media(max-width:500px) {
+				height: 60px;
+			}
 		}
 		&__circle{
 			position: absolute;
 			bottom: 0px;
 			border-radius: 50%;
-			margin-bottom: 20%;
-			width:calc(100% - 5px);
+			width:90%;
+			max-width: 120px;
 			& > div{
 				width: 70%;
 				height: 70%;
@@ -344,6 +348,6 @@ canvas{
 	width: 10px;
 	height: 10px;
 	border-radius: 50%;
-	position: relative;
+	position: absolute;
 	z-index: 10;
 }
