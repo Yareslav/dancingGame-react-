@@ -15,7 +15,7 @@ const MainGame=createContext()
 export default function Game() {
   const propsData = useContext(MainApp);
   var data = useRef({});
-  var [controlledState, setControlledState] = useState({
+  var [display, setDisplay] = useState({
     score: 0,
     stopped: false,
     coefficient: 1,
@@ -39,7 +39,7 @@ export default function Game() {
     )[value];
   }, []);
   return (
-    <MainGame.Provider value={[controlledState.stopped,setControlledState]}>
+    <MainGame.Provider value={[display,setDisplay]}>
       <div className="game beet2">
       <audio src />
       <Canvas />
@@ -206,22 +206,17 @@ function Canvas() {
   //useEffect(()=>{new createCanvas()},[])
   return <canvas />;
 }
-function GameMark({type,status}) {
-
-  return (
-    <h2 className="game__mark">
-      hello world
-    </h2>
-  )
-}
 function GameField({gameType}) {
-  var gameStat = useRef({}).current , processControl=useRef().current;
+  var gameStat = useRef({}).current , processControl=useRef();
   var [columns,setColumns]=useState([]);
-  var [stopped,setControlledState]=useContext(MainGame);
+  var [display,setDisplay]=useContext(MainGame);
   class Process {
     interval;
     period;
     stopped=false;
+    combo=0;
+    coefficient=1;
+    score=0;
     constructor({speed}) {
       this.speed=speed;
       this.arrowMass=[];
@@ -234,19 +229,26 @@ function GameField({gameType}) {
       this.start();
     }
     start() {
-      this.interval=setInterval(()=>this.render(),50) //this.speed
+      this.interval=setInterval(()=>{
+        //!!!!!!!works twice
+       console.log(`works`);
+        this.render()
+      },3000) //this.speed
     };
     render() {
+      this.arrowMass.forEach((elem)=>{
+        elem.mass.forEach((arrow,ind)=>{
+          if (arrow.y>=$(`.game__field`).height()) {
+            elem.mass.splice(ind,1);
+            this.changeDisplay(true);
+          }
+          if (!arrow.destroyed) arrow.y+=8;
+        })
+      });
       if (this.period==this.generatingPeriod) {
         this.generate();
         this.period=0;
       } else this.period++;
-      this.arrowMass.forEach((elem)=>{
-        elem.mass.forEach((arrow,ind)=>{
-          if (arrow.y>=$(`.game__field`).height()) elem.mass.splice(ind,1);
-          if (!arrow.destroyed) arrow.y+=8;
-        });
-      })
       this.setColumns()
     };
     generate() {
@@ -269,6 +271,8 @@ function GameField({gameType}) {
       const CODE=generateCode();
       elem_.destroyed=true;
       elem_.code=CODE;
+      this.changeDisplay();
+      console.log(this.arrowMass[column].type);
       setTimeout(()=>{
         this.arrowMass[column].mass.forEach((elem,ind)=>{
           if (elem.code==CODE) this.arrowMass[column].mass.splice(ind,1);
@@ -287,12 +291,26 @@ function GameField({gameType}) {
         return str;
       }
     }
-    set stopped(bool) {
+    set stopProcess(bool) {
       if (bool) this.stop()
       else if (!bool && this.stopped) this.start()
       this.stopped=bool;
     }
+    changeDisplay(miss) {
+      if (miss) {
+        this.combo=0;
+        this.coefficient=1;
+      }
+      else {
+        this.combo++;
+        this.score+=10*this.coefficient;
+      }
+      setDisplay((curr)=>{return {...curr,score:this.score,coefficient:this.coefficient}})
+    }
   }
+  useEffect(()=>{
+    processControl.current=new Process(gameStat);
+  },[])
   useMemo(() => {
     var _ = [
       {
@@ -328,9 +346,11 @@ function GameField({gameType}) {
       [51,83,40],//down yellowArrow
       [52,65,37]//left blueArrow
     ];
-    processControl=new Process(gameStat);
+
   }, []);
-  processControl.stopped=stopped;
+  useMemo(()=>{
+   // processControl.current.stopProcess=display.stopped;
+  },[display.stopped])
   return (
     <div className="game__field beet" onMouseDown={(eve)=>eve.preventDefault()}>
       <img className="game__gif" src={convert(gameStat.decorGif1, "gif")} />
@@ -410,4 +430,12 @@ function Arrow({type,arrowClick,destroyed,y,color}) {
   else {
     return <p style={{top:y,background:`rgba(${color},0.6)`}} ref={animatedObject} className="explosion"></p>;
   }
+}
+function GameMark({type,status}) {
+
+  return (
+    <h2 className="game__mark">
+      hello world
+    </h2>
+  )
 }
