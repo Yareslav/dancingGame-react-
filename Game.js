@@ -14,14 +14,16 @@ import { MainApp, convert, random } from "./App";
 const MainGame=createContext()
 export default function Game() {
   const propsData = useContext(MainApp);
-  var data = useRef({});
+  var data = useRef({}).current;
   var [display, setDisplay] = useState({
     score: 0,
     stopped: false,
     coefficient: 1,
+    health:50,
+    allowControl:false
   });
   useMemo(() => {
-    var value;
+    var value , song;
     switch (propsData.state.exception) {
       case 0:
         value = "Sunny Beach";
@@ -33,25 +35,26 @@ export default function Game() {
         value = "Cyber City";
         break;
     }
-    data.current.type = value;
-    data.current.bestRecord = JSON.parse(
+    data.type = value;
+    data.song=song;
+    data.bestRecord = JSON.parse(
       localStorage.getItem("locationsPoints")
     )[value];
   }, []);
   return (
     <MainGame.Provider value={[display,setDisplay]}>
       <div className="game beet2">
-      <audio src />
-      <Canvas />
-      <GameLine bestRecord={data.current.bestRecord} />
-      <h4 class="game__title">{data.current.type}</h4>
-      <GameField gameType={data.current.type} />
+      <audio src={data.song} />
+      <Canvas/>
+      <GameLine bestRecord={data.bestRecord} />
+      <h4 class="game__title">{data.type}</h4>
+      <GameField gameType={data.type} />
     </div>
     </MainGame.Provider>
   );
 }
 function GameLine({bestRecord}) {
-  const [state,setState]=useContext(MainGame);
+  const [display,setDisplay]=useContext(MainGame);
   var [controlsIsDown, setControlsIsDown] = useState(false);
   useEffect(() => {
     $(window).on(`resize`, resize);
@@ -63,12 +66,8 @@ function GameLine({bestRecord}) {
   }, []);
   var controls = (
     <>
-      <div className="game__pause center">
-        <img src={convert(state.stopped ? "start" : "pause")} />
-      </div>
-      <div className="game__reload center">
-        <img src={convert("reload")} alt />
-      </div>
+      <Pause/>
+      <Reload/>
     </>
   );
   return (
@@ -76,10 +75,10 @@ function GameLine({bestRecord}) {
       <div className="beet">
         <div className="game__points beet2">
           <p>count</p>
-          <p>* {state.coefficient}</p>
+          <p>* {display.coefficient}</p>
         </div>
         <p>
-          score : <span>{state.score}</span>
+          score : <span>{display.score}</span>
         </p>
         <p>
           Best record : <span>{bestRecord}</span>
@@ -91,6 +90,36 @@ function GameLine({bestRecord}) {
       ) : null}
     </div>
   );
+  function Pause() {
+    function change() {
+      if (display.allowControl) setDisplay({...display,stopped:!display.stopped})
+    }
+    useEffect(()=>{
+      $(window).on(`keyup`,(eve)=>{
+        if (eve.which==32 && eve.ctrlKey) change()
+      })
+    },[])
+    return (
+      <div className="game__pause center" onClick={change}>
+      <img src={convert(display.stopped ? "play" : "pause")} />
+    </div>
+    )
+  }
+  function Reload() {
+    function change() {
+      if (display.allowControl) {}
+    }
+    useEffect(()=>{
+      $(window).on(`keyup`,(eve)=>{
+        if (eve.which==82 && eve.ctrlKey) change();
+      })
+    },[])
+    return (
+    <div className="game__reload center" onClick={change}>
+      <img src={convert("reload")} alt />
+    </div>
+    )
+  }
 }
 function Canvas() {
   class createCanvas {
@@ -210,30 +239,33 @@ function GameField({gameType}) {
   var gameStat = useRef({}).current , processControl=useRef();
   var [columns,setColumns]=useState([]);
   var [display,setDisplay]=useContext(MainGame);
+  const gameMarkStatus=useRef({}).current;
   class Process {
-    interval;
-    period;
+    mainInterval;
+    healthWarningInterval;
+    period={normal:null,max:null};
+    health={normal:50,max:50};
     stopped=false;
-    combo=0;
-    coefficient=1;
-    score=0;
-    constructor({speed}) {
-      this.speed=speed;
-      this.arrowMass=[];
-      this.generatingPeriod=45;
-      this.period=this.generatingPeriod;
+    gameStatics={combo:0,coefficient:1,score:0,misses:0};
+    attributes={speed:"",damage:""}
+    arrowMass=[]
+    result;
+    constructor({speed,damage}) {
+      this.attributes.speed=speed;
+      this.attributes.damage=damage;
+      this.period.normal=this.period.max=45;
       Object.entries(gameStat.colors).forEach((elem,ind) => {
         this.arrowMass.push({type:elem[0],mass:[]})
       });
       this.setColumns();
-      this.start();
+      setTimeout(()=>{this.start();},3000);
     }
     start() {
-      this.interval=setInterval(()=>{
-        //!!!!!!!works twice
-       console.log(`works`);
-        this.render()
-      },3000) //this.speed
+      this.mainInterval=setInterval(()=>this.render(),40); //this.speed
+      this.healthWarningInterval=setInterval(()=>{
+        if (this.health.normal<this.health.max/4) gameMarkStatus.events=`health`
+      },5000);
+      setDisplay((curr)=>{return {...curr,allowControl:true}})
     };
     render() {
       this.arrowMass.forEach((elem)=>{
@@ -245,10 +277,10 @@ function GameField({gameType}) {
           if (!arrow.destroyed) arrow.y+=8;
         })
       });
-      if (this.period==this.generatingPeriod) {
+      if (this.period.normal==this.period.max) {
         this.generate();
-        this.period=0;
-      } else this.period++;
+        this.period.normal=0;
+      } else this.period.normal++;
       this.setColumns()
     };
     generate() {
@@ -256,7 +288,9 @@ function GameField({gameType}) {
       this.arrowMass[line].mass.unshift({y:0,destroyed:false})
     };
     stop() {
-      clearInterval(this.interval);
+      clearInterval(this.mainInterval);
+      clearInterval(this.healthWarningInterval);
+      if (this.result) setDisplay((curr)=>{return {...curr,allowControl:false}})
     };
     setColumns() {
       columns=[];
@@ -298,14 +332,45 @@ function GameField({gameType}) {
     }
     changeDisplay(miss) {
       if (miss) {
-        this.combo=0;
-        this.coefficient=1;
+        this.gameStatics.combo=0;
+        this.gameStatics.misses+=1;
+        this.gameStatics.coefficient=(this.gameStatics.coefficient/2>=1) ? this.gameStatics.coefficient/2 : 1;
+        gameMarkStatus.miss=true;
+        gameMarkStatus.misses=this.gameStatics.misses;
+        this.changeHealth(true);
       }
       else {
-        this.combo++;
-        this.score+=10*this.coefficient;
+        this.gameStatics.combo++;
+        this.gameStatics.misses=0;
+        gameMarkStatus.miss=false;
+        gameMarkStatus.combo=this.gameStatics.combo;
+        if (this.gameStatics.combo>5) {
+          if (this.gameStatics.coefficient<=2.2) this.gameStatics.coefficient+=0.2;
+          else if (this.gameStatics.coefficient<=3) this.gameStatics.coefficient+=0.15;
+          else if (this.gameStatics.coefficient<=6) this.gameStatics.coefficient+=0.1;
+        }
+        this.gameStatics.score+=10*this.gameStatics.coefficient;
+        this.changeHealth(false);
       }
-      setDisplay((curr)=>{return {...curr,score:this.score,coefficient:this.coefficient}})
+      this.gameStatics.coefficient=+this.gameStatics.coefficient.toFixed(2);
+      setDisplay((curr)=>{return {...curr,
+        score:this.gameStatics.score,
+        coefficient:this.gameStatics.coefficient,
+        health:{normal:this.health.normal,max:this.health.max}}
+      });
+    }
+    changeHealth(miss) {
+      var heal;
+      if (miss) {
+        if (this.gameStatics.misses<3) heal=-this.attributes.damage;
+        else if (this.gameStatics.misses>3 && this.gameStatics.misses<7) heal=-this.attributes.damage*2;
+        else heal=-this.attributes.damage*3;
+      }
+      else {
+        if (this.gameStatics.combo>10 && this.gameStatics.combo<20) heal=this.attributes.damage*0.1;
+        else if (this.gameStatics.combo>20) heal=this.attributes.damage;
+      }
+      this.health.normal+=heal;
     }
   }
   useEffect(()=>{
@@ -318,13 +383,14 @@ function GameField({gameType}) {
         decorGif1: `dancingSpongeBob`,
         decorGif2: `dancingPatric`,
         fonImg: "beach",
-        speed:80
+        speed:80,
       },
       {
         type:"Dancing Scene",
         decorGif1:`discoBall`,
         decorGif2:`dancingMan`,
-        fonImg:``
+        fonImg:``,
+        speed:70
       }
     ].forEach((obj) => {
       if (gameType == obj.type) {
@@ -346,16 +412,15 @@ function GameField({gameType}) {
       [51,83,40],//down yellowArrow
       [52,65,37]//left blueArrow
     ];
-
   }, []);
   useMemo(()=>{
-   // processControl.current.stopProcess=display.stopped;
+    if (processControl.current) processControl.current.stopProcess=display.stopped;
   },[display.stopped])
   return (
     <div className="game__field beet" onMouseDown={(eve)=>eve.preventDefault()}>
       <img className="game__gif" src={convert(gameStat.decorGif1, "gif")} />
       <div className="game__process beet" style={{background:`url(${convert(gameStat.fonImg, "gif")})`}}>
-      <GameMark/>
+      <GameMark gameMarkStatus={gameMarkStatus}/>
         <div className="game__columns beet">{columns}</div>
       </div>
       <img src className="game__gif" src={convert(gameStat.decorGif2, "gif")} />
@@ -364,11 +429,11 @@ function GameField({gameType}) {
 }
 function FieldColumn({color,keys,arrowStatus,destroy}) {
   var [state,setState]=useState({});
-  const arrowMass=arrowStatus.mass;
+  const arrowMass=arrowStatus.mass , display=useContext(MainGame);
   function arrowClick() {
     var y;
     var notAnimatedObj=[...arrowMass].filter((elem)=>{if (!elem.destroyed) return elem})
-    if (arrowMass.length==0 || notAnimatedObj.length==0) return;
+    if (arrowMass.length==0 || notAnimatedObj.length==0 || display.stopped) return;
     y=notAnimatedObj[notAnimatedObj.length-1].y;
     const height_=$(`.game__arrow`).height();
     y+=height_;
@@ -431,11 +496,73 @@ function Arrow({type,arrowClick,destroyed,y,color}) {
     return <p style={{top:y,background:`rgba(${color},0.6)`}} ref={animatedObject} className="explosion"></p>;
   }
 }
-function GameMark({type,status}) {
+function GameMark({gameMarkStatus}) {
+  var [allowTime,setAllowTime]=useState(true);
+  const show=useRef({style:{},animate:"",text:""}).current;
+  var keys=Object.keys(gameMarkStatus);
+  if (keys.length==0) return null;
+  if (allowTime) {
+    if (!gameMarkStatus.global) setTimeout(()=>{
+      keys.forEach((elem)=>{
+        delete gameMarkStatus[elem];
+      })
+      setAllowTime(true);
+    },(gameMarkStatus.events) ? 2000 : 500);
+    setShow();
+    setAllowTime(false);
+  }
+  function setShow() {
+    if (gameMarkStatus.global) {
+      var _=[{status:`start`},{status:`stop`},{status:`lost`},{status:`won`}].forEach((elem)=>{
+        if (gameMarkStatus.global==elem.status) {
+          show.style=elem.style;
+          show.text=elem.text;
+          show.animate=elem.animate;
+        }
+      })
+    }
+    else if (gameMarkStatus.events) {
+      if (gameMarkStatus.events==`health`) {
+        show.text=(<>
+          <p>WARNING</p>
+          <p>Low health</p>
+          </>)
+      } else {
 
+      }
+    }
+    else if (gameMarkStatus.miss) {
+      const {misses}=gameMarkStatus;
+      if (misses<3) {
+        show.text=`Miss`;
+      }
+      else if (misses>3 && misses<8) {
+        show.text=`Disgusting`
+      }
+      else {
+        show.text=`Terrible`
+      }
+    }
+    else if (!gameMarkStatus.miss) {
+      const {combo}=gameMarkStatus;
+      if (combo<5) {
+        show.text=`good`
+      }
+      else if (combo>5 && combo<18) {
+        show.text=(<>
+          <p>Great</p>
+          <p>combo x {combo}</p>
+        </>)
+      }
+      else {
+        show.text=(<>
+          <p>Wonderful</p>
+          <p>combo x {combo}</p>
+        </>)
+      }
+    }
+  }
   return (
-    <h2 className="game__mark">
-      hello world
-    </h2>
+    <h2 className={"game__mark"+show.animate} style={show.style}>{show.text}</h2>
   )
 }

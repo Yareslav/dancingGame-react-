@@ -238,6 +238,7 @@ body{
 		background: radial-gradient(circle, rgba(46,64,83,1) 49%, rgba(237,187,153,1) 74%);
 		cursor: url("./images/note.png") ,  auto;
 		& img{
+			height: 50%;
 			width: 50%;
 		}
 	}
