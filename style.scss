@@ -9,6 +9,7 @@ $purple:#6C3483;
 $red:#E74C3C;
 body{
 	max-width: 1920px;
+	font-family: "Stick No Bills";
 	& > div{
 		height:100vh;
 		max-height: 1080px;
@@ -231,12 +232,7 @@ body{
 
 	// .game__pause
 
-	&__pause , &__reload {
-		width: 35px;
-		height: 35px;
-		border-radius: 50%;
-		background: radial-gradient(circle, rgba(46,64,83,1) 49%, rgba(237,187,153,1) 74%);
-		cursor: url("./images/note.png") ,  auto;
+	&__controlButton {
 		& img{
 			height: 50%;
 			width: 50%;
@@ -338,6 +334,49 @@ body{
 			@include min(60,1920);
 			width:100%;
 		}
+
+			&__health {
+				position: absolute;
+				bottom: 10px;
+				right: 10px;
+				width: 25%;
+				height: 50px;
+				background: $purple;
+				border-radius: 10px;
+				& > div{
+					width: calc(100% - 30px);
+					height: 30px;
+					background: $blue;
+					border:2px solid $orange;
+					border-radius: 10px;
+					position: relative;
+				}
+				@media(max-width:1000px) {
+					width: 40%;
+					min-width: 260px;
+				}
+			}
+
+			// .game__indicator
+
+			&__indicator {
+				height:100%;
+				border-radius: 10px;
+				position: absolute;
+				right: 0;
+			}
+
+			// .game__healthResult
+
+			&__healthResult {
+				position: relative;
+				text-align: center;
+				height:100%;
+				width:100%;
+				font-size: 27px;
+				color: $black;
+				font-weight: 800;
+			}
 }
 canvas{
 	width:100%;
@@ -351,4 +390,44 @@ canvas{
 	border-radius: 50%;
 	position: absolute;
 	z-index: 10;
+}
+.circle{
+	width: 40px;
+	height: 40px;
+	background: $purple;
+	border-radius: 50%;
+	cursor: url("./images/note.png") ,  auto;
+	& img{
+		width: 50%;
+	}
+}
+.tips {
+	position: absolute;
+	bottom: 10px;
+	left: 10px;
+	width: 300px;
+	&__active {
+		width: 55px;
+		height: 55px;
+	}
+	&__container {
+		margin-bottom: 10px;
+		background: $purple;
+		border-radius: 5px;
+		justify-content: space-around;
+		height: 240px;
+		& > div{
+			width: 95%;
+			height: 30px;
+			border-radius: 10px;
+			background: $blue;
+			font-size: 16px;
+			color: $orange;
+			& span{
+				color:$red;
+				font-family: "Are You Serious";
+				font-size: 25px;
+			}
+		}
+	}
 }
