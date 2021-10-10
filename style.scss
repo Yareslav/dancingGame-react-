@@ -11,8 +11,8 @@ body{
 	max-width: 1920px;
 	font-family: "Stick No Bills";
 	& > div{
-		height:100vh;
-		max-height: 1080px;
+		min-height:100vh;
+		height:100%;
 	}
 }
 .form {
@@ -65,10 +65,10 @@ body{
 
 	&__maps {
 		margin-top: 20px;
-		display: grid;
-		grid-template-columns: repeat(3,1fr);
 		grid-gap: 20px;
 		width: 80%;
+		display: grid;
+		grid-template-columns: repeat(3,1fr);
 	}
 	&__block{
 		justify-content: stretch;
@@ -167,17 +167,40 @@ body{
 			color: $red;
 		}
 	}
-
+	@media(max-width:900px) {
+		&__select{
+			margin-top: 10px ;
+		}
+		&__maps{
+			grid-template-columns: repeat(2,1fr);
+			width: 90%;
+			& > div:last-child{
+				grid-column: span 2;
+			}
+		}
+		&__author , &__records{
+			margin-top: 20px;
+			position: relative;
+		}
+	}
+	@media(max-width:450px) {
+		&__maps{
+			grid-template-columns: 1fr;
+			& > div:last-child{
+				grid-column: span 1;
+			}
+		}
+	}
 }
 .selected{
 	border: 5px solid $purple;
 	transition: all 0.3s ease;
 	border-radius: 10px;
 }
-.allowPress{
-	background: $red;
-	cursor: not-allowed;
-	animation: none;
+.disallowPress{
+	background: $red !important;
+	cursor: not-allowed !important;
+	animation: none !important;
 }
 .typicalText{
 		color: #2471A3;
@@ -256,7 +279,6 @@ body{
 		&__field {
 			width: 60%;
 			gap:10px;
-			height: 80%;
 			@media(max-width:1000px) {
 				width: 70%;
 			}
@@ -399,6 +421,10 @@ canvas{
 	cursor: url("./images/note.png") ,  auto;
 	& img{
 		width: 50%;
+	}
+	&:hover{
+		transition: all 0.3s ease;
+		background: $orange;
 	}
 }
 .tips {

@@ -61,31 +61,31 @@ function Form() {
     );
   });
   function startGame() {
-    if (!state.type) return;
+    if (!state.exception && state.exception!==0) return;
     setActive({ ...state, active: false });
   }
   function click(eve) {
     if ($(eve.target).is(`.form`)) setActive({ ...state, exception: "" });
   }
   return (
-    <div class="form beet2" onClick={click}>
-      <div class="form__main-text beet">
+    <div className="form beet2" onClick={click}>
+      <div className="form__main-text beet">
         <img src={convert("dancingPeople1")} alt="" />
         <p>Welcome to dancing game </p>
         <img src={convert("dancingPeople2")} alt="" />
       </div>
-      <p class="form__select">select the map </p>
-      <div class="form__maps beet">{maps}</div>
+      <p className="form__select">select the map </p>
+      <div className="form__maps beet">{maps}</div>
       <div
-        class={"form__button center " + (state.type ? "" : "allowPress")}
+        className={"form__button center " + ((state.exception || state.exception===0) ?  "" : "disallowPress")}
         onClick={startGame}
       >
         PLAY
       </div>
-      <p class="form__author">
+      <p className="form__author">
         Author : <span>Yarema</span>
       </p>
-      <div class="form__records typicalText">
+      <div className="form__records typicalText">
         <div className="beet">
           <img src={convert("counts")} id="counts" />
           <p>PLayed game : </p>
@@ -123,7 +123,6 @@ function SelectGameMode({ elem, selected, ind }) {
         <img src={convert(elem.img, `gif`)} alt="main" />
       </div>
       <p className="form__name">{elem.name}</p>
-      <p className="typicalText">Details</p>
     </div>
   );
 }
