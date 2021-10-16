@@ -10,9 +10,10 @@ import {
   useRef,
   createContext,
 } from "react";
-import { MainApp, convert, random } from "./App";
+import { MainApp, convert, random,log } from "./App";
 import * as Help from "./HelpComponents";
 export const MainGame = createContext();
+export const shitCorrectsBugWithUseEffect={display:{},allow:null}
 export default function Game() {
   const propsData = useContext(MainApp);
   var data = useRef({}).current;
@@ -20,6 +21,8 @@ export default function Game() {
     stopped: false,
     allowControl: false,
     reload: false,
+    allowSound:false,
+    //hardness:`easy`, //**can be mistake
     //!!syncronise
     score: 0,
     coefficient: 1,
@@ -27,51 +30,65 @@ export default function Game() {
     //!!syncronise
   });
   useMemo(() => {
-    var value, song;
-    switch (propsData.state.exception) {
-      case 0:
-        value = "Sunny Beach";
-        break;
-      case 1:
-        value = "Dancing Scene";
-        break;
-      case 2:
-        value = "Cyber City";
-        break;
-    }
-    data.type = value;
-    data.song = song;
-    data.bestRecord = JSON.parse(localStorage.getItem("locationsPoints"))[
-      value
-    ];
+    var _=[
+      {
+        type: "Sunny Beach",
+        decorGif1: `dancingSpongeBob`,
+        decorGif2: `dancingPatric`,
+        fonImg: "beach",
+        speed: 80,
+        song:`Rumble`
+      },
+      {
+        type: "Dancing Scene",
+        decorGif1: `discoBall`,
+        decorGif2: `dancingMan`,
+        fonImg: `dance`,
+        speed: 70,
+        song:``
+      },
+      {
+        type: "Cyber City",
+        decorGif1: `discoBall`,
+        decorGif2: `dancingMan`,
+        fonImg: `retroCar`,
+        speed:90,
+        song:``
+      }
+    ].forEach((elem,ind)=>{
+      if (propsData.state.exception==ind) {
+        Object.entries(elem).forEach((elem) => {
+          data[elem[0]] = elem[1];
+        });
+      }
+    })
+    data.bestRecord = JSON.parse(localStorage.getItem("locationsPoints"))[data.type];
   }, []);
   useEffect(() => {
     setTimeout(() => {
-      setDisplay({ ...display, allowControl: true });
+      setDisplay({ ...display, allowControl: true,allowSound:true });
     }, 3000);
   }, []);
-  sessionStorage.setItem("allow",JSON.stringify(display));
+  shitCorrectsBugWithUseEffect.display=display;
   return (
     <MainGame.Provider value={[display, setDisplay]}>
       <div className="game beet2">
-        <audio src={data.song} />
+        <Help.Audio src={data.song} active={display.allowSound}/>
         <Help.Canvas />
         <Help.GameLine bestRecord={data.bestRecord} />
-        <h4 class="game__title">{data.type}</h4>
-        <GameField gameType={data.type} />
+        <GameField  decor={data}/>
         <Help.Health />
         <Help.Tips />
       </div>
     </MainGame.Provider>
   );
 }
-function GameField({ gameType }) {
-  var gameStat = useRef({}).current,
+function GameField({ decor }) {
+  var gameStat = useRef({}),
     processControl = useRef();
   var [columns, setColumns] = useState([]);
   var [display, setDisplay] = useContext(MainGame);
   const gameMarkStatus = useRef({}).current;
-
   class Process {
     mainInterval;
     healthWarningInterval;
@@ -266,36 +283,14 @@ function GameField({ gameType }) {
     processControl.current = new Process(gameStat);
   }, []);
   useMemo(() => {
-    var _ = [
-      {
-        type: "Sunny Beach",
-        decorGif1: `dancingSpongeBob`,
-        decorGif2: `dancingPatric`,
-        fonImg: "beach",
-        speed: 80,
-      },
-      {
-        type: "Dancing Scene",
-        decorGif1: `discoBall`,
-        decorGif2: `dancingMan`,
-        fonImg: ``,
-        speed: 70,
-      },
-    ].forEach((obj) => {
-      if (gameType == obj.type) {
-        Object.entries(obj).forEach((elem, ind) => {
-          if (ind == 0) return;
-          gameStat[elem[0]] = elem[1];
-        });
-      }
-    });
-    gameStat.colors = {
+    gameStat.current={...decor};
+    gameStat.current.colors = {
       red: `231, 76, 60`,
       green: `7,194,18`,
       orange: `243,182,17`,
       blue: `36, 113, 163`,
     };
-    gameStat.keys = [
+    gameStat.current.keys = [
       [49, 87, 38], //up - redArrow
       [50, 68, 39], //right greenArrow
       [51, 83, 40], //down yellowArrow
@@ -306,20 +301,21 @@ function GameField({ gameType }) {
     if (processControl.current)
       processControl.current.stopProcess = display.stopped;
   }, [display.stopped]);
+  gameStat=gameStat.current;
   return (
     <div
       className="game__field beet"
       onMouseDown={(eve) => eve.preventDefault()}
     >
-      <img className="game__gif" src={convert(gameStat.decorGif1, "gif")} />
+      <img className="game__gif" src={convert(gameStat.decorGif1, "gif")} id="first"/>
       <div
         className="game__process beet"
-        style={{ background: `url(${convert(gameStat.fonImg, "gif")})` }}
+        style={{ backgroundImage: `url(${convert(gameStat.fonImg, "gif")})` }}
       >
         <Help.GameMark gameMarkStatus={gameMarkStatus} />
         <div className="game__columns beet">{columns}</div>
       </div>
-      <img src className="game__gif" src={convert(gameStat.decorGif2, "gif")} />
+      <img src className="game__gif" src={convert(gameStat.decorGif2, "gif")} id="last"/>
     </div>
   );
 }
@@ -421,4 +417,3 @@ function Arrow({ type, arrowClick, destroyed, y, color }) {
     );
   }
 }
-//!! keyup for pause and reload doesn`t work

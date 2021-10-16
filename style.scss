@@ -268,6 +268,7 @@ body{
 		width: 50px !important;
 		position: absolute;
 		top: 50px;
+		z-index: 20;
 		right: 0;
 		background: $blue;
 		justify-content: space-around;
@@ -277,13 +278,11 @@ body{
 		// .game__field
 
 		&__field {
+			margin-top: 70px;
 			width: 60%;
 			gap:10px;
 			@media(max-width:1000px) {
-				width: 70%;
-			}
-			@media(max-width:650px) {
-				width: calc(100% - 20px);
+				width: 80%;
 			}
 		}
 
@@ -298,7 +297,9 @@ body{
 		&__process {
 			width: 70%;
 			height:100%;
-			background: url(./images/beach.gif);
+			background-repeat: no-repeat;
+			background-position: center;
+			background-color: $purple;
 		}
 
 		// .game__background
@@ -328,7 +329,7 @@ body{
 		}
 		&__arrow{
 			position: absolute;
-			z-index: 2;
+			z-index: 15;
 			height: 15%;
 			cursor: url("./images/note.png") ,  auto;
 			max-height: 90px;
@@ -398,6 +399,26 @@ body{
 				font-size: 27px;
 				color: $black;
 				font-weight: 800;
+			}
+			@media(max-width:650px) {
+				&__field{
+					width: calc(100% - 20px);
+					justify-content: center;
+				}
+				&__gif{
+					position: absolute;
+					width: 40%;
+					z-index: 10;
+				}
+				#first{
+					top: 20vw;
+				}
+				#last{
+					bottom: 20vw;
+				}
+				&__process{
+					width:100%;
+				}
 			}
 }
 canvas{

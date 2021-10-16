@@ -19,16 +19,59 @@ export default function App() {
   });
   return (
     <MainApp.Provider value={{ state, setActive }}>
-      {/* {state.active ? <Form /> : <Game />} */}
-      <Game/>
+      {state.active ? <Form /> : <Game />}
+      {/* <Game/> */}
     </MainApp.Provider>
   );
 }
 export function random(a, b) {
   return Math.floor(a + Math.random() * (b + 1 - a));
 }
-export function convert(data, type = "png") {
-  return require(`./images/${data}.${type}`).default;
+export function convert(data, type = "png",sound) {
+  if (!sound) return require(`./images/${data}.${type}`).default;
+  else return require(`./audio/${data}.mp3`).default;
+}
+export function log(...mass) {
+  mass.forEach((elem)=>{
+    if (typeof (elem)==`object` && !Array.isArray(elem)) console.table(elem)
+    else if (Array.isArray(elem)) console.log(...elem);
+    else {
+      var _=[
+      {
+        type:"number",
+        fontWeight:600,
+        color:`#EA63F0`
+      },
+      {
+        type:"blight",
+        fontWeight:900,
+        color:`#DD161F`
+      },
+      {
+        type:"string",
+        fontWeight:100,
+        color:`#F8E30D`
+      },
+      {
+        type:"boolean",
+        fontWeight:900,
+        color:`#0D14F8`
+      },
+      {
+        type:"function",
+        fontWeight:400,
+        color:`#08ECC9`
+      },
+      {
+        type:"undefined",
+        fontWeight:900,
+        color:`#F70A0A`
+      },
+    ].forEach((item)=>{
+        if (typeof elem==item.type) console.log(`%c ${elem}`,`color:${item.color}; font-weight:${item.fontWeight}`);
+      })
+    }
+  })
 }
 function Form() {
   var location = useRef(JSON.parse(localStorage.getItem("locationsPoints")));

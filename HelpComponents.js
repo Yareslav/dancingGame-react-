@@ -9,24 +9,24 @@ import {
   useContext,
   useRef,
 } from "react";
-import { MainGame } from "./Game";
-import { convert, random } from "./App";
+import { MainGame, shitCorrectsBugWithUseEffect } from "./Game";
+import { convert, random,log } from "./App";
 export default null;
-var allowMain;
 export function Pause() {
   var [display, setDisplay] = useContext(MainGame);
 	const [allow, setAllow] = useState(true);
-	allowMain=allow;
+	shitCorrectsBugWithUseEffect.allow=allow;
   function change() {
-		display=JSON.parse(sessionStorage.getItem("allow"));
-    if (!(display.allowControl && allowMain)) return;
+		display=shitCorrectsBugWithUseEffect.display;
+    if (!(display.allowControl && shitCorrectsBugWithUseEffect.allow)) return;
     if (display.stopped) {
 			setAllow(false);
       setTimeout(() => {
 				setAllow(true);
       }, 2000);
     }
-		setDisplay({ ...display, stopped: !display.stopped });
+    const apply=!display.stopped;
+		setDisplay({ ...display, stopped:apply ,allowSound:apply });
   }
   useEffect(() => {
     $(window).on(`keyup`, (eve) => {
@@ -42,7 +42,7 @@ export function Pause() {
 export function Reload() {
 	var [display, setDisplay] = useContext(MainGame);
   function change() {
-		display=JSON.parse(sessionStorage.getItem("allow"));
+		display=shitCorrectsBugWithUseEffect.display;
     if (display.allowControl) { //display.allowControl
 			setDisplay({ ...display, reload: true });
     }
@@ -107,7 +107,7 @@ export function Tips() {
     info.current = [];
     var _ = [
       [`stop the game`, `ctrl + space`],
-      [`reload the game`, `ctrl + T`],
+      [`reload the game`, `alt + R`],
       [`destroy red arrow`, `1 , w , down 1`],
       [`destroy green arrow`, `2 , d , down 2`],
       [`destroy orange arrow`, `3 , s , down 3`],
@@ -186,13 +186,17 @@ export function GameLine({ bestRecord }) {
 }
 export function Canvas() {
   const canvas = useRef();
+  var display=useContext(MainGame)[0];
   class createCanvas {
     canvas = document.querySelector(`canvas`);
     notesMass = [];
     imgWidth;
     imgHeight;
     interval;
+    fallen;
+    stopped=false;
     hardness = {
+      type:`easy`,
       generateFrequency: 14,
       speed: 60,
       minGenerateNum: 3,
@@ -200,22 +204,26 @@ export function Canvas() {
     };
     ctx = this.canvas.getContext(`2d`);
     constructor() {
+      this.fallen=this.hardness.generateFrequency;
       this.resize();
-      this.setProcess();
+      this.start();
       $(window).on(`resize`, () => this.resize());
     }
-    setProcess() {
-      this.interval = setInterval(() => {
-        var felt = this.hardness.generateFrequency;
-        if (felt == this.hardness.generateFrequency) {
+    start() {
+      this.interval = setInterval(() => {this.render()}, this.hardness.speed);
+    }
+    stop() {
+      clearInterval(this.interval);
+    }
+    render() {
+        if (this.fallen >= this.hardness.generateFrequency) {
           this.generate();
           this.fall();
-          felt = 0;
+          this.fallen = 0;
         } else {
-          felt++;
+          this.fallen++;
           this.fall();
         }
-      }, this.hardness.speed);
     }
     resize() {
       this.canvas.width = $(window).width();
@@ -295,10 +303,32 @@ export function Canvas() {
         elem.index = ind;
       });
     }
+    set stopProcess(bool){
+        if (bool) this.stop();
+        else if (!bool && this.stopped) this.start();
+        this.stopped = bool;
+    }
+    set setHardness(hardness){
+      if (this.hardness.type==hardness) return;
+      var hard=this.hardness;
+      hard.speed-=10;
+      hard.generateFrequency-=2;
+      hard.maxGenerateNum+=2;
+      hard.min+=1;
+      this.hardness.type=hardness;
+      this.stop();
+      this.start();
+    }
   }
   useEffect(() => {
-    //canvas.current= new createCanvas()
+    canvas.current= new createCanvas()
   }, []);
+  useMemo(() => {
+    if (canvas.current) {
+      canvas.current.stopProcess = display.stopped;
+      canvas.current.setHardness=display.hardness;
+    }
+  }, [display.stopped]);
   return <canvas />;
 }
 export function GameMark({ gameMarkStatus }) {
@@ -379,4 +409,25 @@ export function GameMark({ gameMarkStatus }) {
       {show.text}
     </h2>
   );
+}
+export function Audio({src,active}) {
+  var ref=useRef();
+  var [loaded,setLoaded]=useState(false);
+   var [display,setDisplay]=useContext(MainGame);
+  useEffect(()=>{
+    if (!loaded) return;
+    if (active) ref.current.play();
+    else ref.current.pause()
+  })
+  function load() {
+    const timePercent=Math.round(ref.current.currentTime*100/ref.current.duration);
+    var hardness;
+    if (timePercent<30) hardness=`easy`
+    else if (timePercent<60) hardness=`medium`
+    else hardness=`hard`
+    setDisplay((curr)=>{return {...curr,hardness:hardness}})
+  }
+  return (
+    <audio src={convert(src,null,true)} muted loop ref={ref} onLoadedMetadata={()=>setLoaded(true)} onTimeUpdate={load}/>
+  )
 }
