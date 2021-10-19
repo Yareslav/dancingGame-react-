@@ -353,7 +353,7 @@ body{
 			position: absolute;
 			z-index: 10;
 			text-align: center;
-			font-size: calc(30px + (60 - 30) * (100vw / 1920));
+			font-size: calc(30px + (80 - 30) * (100vw / 1920));
 			@include min(60,1920);
 			width:100%;
 		}
@@ -475,6 +475,70 @@ canvas{
 				font-family: "Are You Serious";
 				font-size: 25px;
 			}
+		}
+	}
+}
+.warning{
+	animation: warning 0.5s linear infinite;
+	@keyframes warning{
+		0% {
+			opacity: 0;
+		}
+		50% {
+			opacity: 1;
+		}
+		100%{
+			opacity: 0;
+		}
+	}
+}
+.terrible{
+	animation: terrible 0.3s ease-in-out infinite;
+	@keyframes terrible{
+		0% {
+			transform: rotate(-30deg)
+		}
+		33% {
+			transform: rotate(0);
+		}
+		66% {
+			transform: rotate(30deg);
+		}
+		100% {
+			transform: rotate(0deg);
+		}
+	}
+}
+.disgusting{
+	animation: disgusting 0.5s ease infinite;
+	@keyframes disgusting{
+		0% {
+			transform: scale(0.1,0.1);
+		}
+		100% {
+			transform: scale(1,1);
+		}
+	}
+}
+.wonderful{
+	animation: wonderful 0.5s linear;
+	@keyframes wonderful{
+		0% {
+			transform: rotate(180deg);
+		}
+		100% {
+			transform: rotate(360deg);
+		}
+	}
+}
+.great{
+	animation: great 0.5s linear;
+	@keyframes great{
+		0% {
+			margin-top: -30%;
+		}
+		100% {
+			margin-top: 0;
 		}
 	}
 }

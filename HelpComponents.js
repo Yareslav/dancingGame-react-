@@ -10,28 +10,28 @@ import {
   useRef,
 } from "react";
 import { MainGame, shitCorrectsBugWithUseEffect } from "./Game";
-import { convert, random,log } from "./App";
+import { convert, random, log } from "./App";
 export default null;
 export function Pause() {
   var [display, setDisplay] = useContext(MainGame);
-	const [allow, setAllow] = useState(true);
-	shitCorrectsBugWithUseEffect.allow=allow;
+  const [allow, setAllow] = useState(true);
+  shitCorrectsBugWithUseEffect.allow = allow;
   function change() {
-		display=shitCorrectsBugWithUseEffect.display;
+    display = shitCorrectsBugWithUseEffect.display;
     if (!(display.allowControl && shitCorrectsBugWithUseEffect.allow)) return;
     if (display.stopped) {
-			setAllow(false);
+      setAllow(false);
       setTimeout(() => {
-				setAllow(true);
+        setAllow(true);
       }, 2000);
     }
-    const apply=!display.stopped;
-		setDisplay({ ...display, stopped:apply ,allowSound:apply });
+    const apply = !display.stopped;
+    setDisplay({ ...display, stopped: apply, allowSound: apply });
   }
   useEffect(() => {
     $(window).on(`keyup`, (eve) => {
-			if (eve.which == 32 && eve.ctrlKey) change();
-		})
+      if (eve.which == 32 && eve.ctrlKey) change();
+    });
   }, []);
   return (
     <div className="game__controlButton circle center" onClick={change}>
@@ -40,11 +40,12 @@ export function Pause() {
   );
 }
 export function Reload() {
-	var [display, setDisplay] = useContext(MainGame);
+  var [display, setDisplay] = useContext(MainGame);
   function change() {
-		display=shitCorrectsBugWithUseEffect.display;
-    if (display.allowControl) { //display.allowControl
-			setDisplay({ ...display, reload: true });
+    display = shitCorrectsBugWithUseEffect.display;
+    if (display.allowControl) {
+      //display.allowControl
+      setDisplay({ ...display, reload: true });
     }
   }
   useEffect(() => {
@@ -186,7 +187,7 @@ export function GameLine({ bestRecord }) {
 }
 export function Canvas() {
   const canvas = useRef();
-  var display=useContext(MainGame)[0];
+  var display = useContext(MainGame)[0];
   class createCanvas {
     canvas = document.querySelector(`canvas`);
     notesMass = [];
@@ -194,9 +195,9 @@ export function Canvas() {
     imgHeight;
     interval;
     fallen;
-    stopped=false;
+    stopped = false;
     hardness = {
-      type:`easy`,
+      type: `easy`,
       generateFrequency: 14,
       speed: 60,
       minGenerateNum: 3,
@@ -204,26 +205,28 @@ export function Canvas() {
     };
     ctx = this.canvas.getContext(`2d`);
     constructor() {
-      this.fallen=this.hardness.generateFrequency;
+      this.fallen = this.hardness.generateFrequency;
       this.resize();
       this.start();
       $(window).on(`resize`, () => this.resize());
     }
     start() {
-      this.interval = setInterval(() => {this.render()}, this.hardness.speed);
+      this.interval = setInterval(() => {
+        this.render();
+      }, this.hardness.speed);
     }
     stop() {
       clearInterval(this.interval);
     }
     render() {
-        if (this.fallen >= this.hardness.generateFrequency) {
-          this.generate();
-          this.fall();
-          this.fallen = 0;
-        } else {
-          this.fallen++;
-          this.fall();
-        }
+      if (this.fallen >= this.hardness.generateFrequency) {
+        this.generate();
+        this.fall();
+        this.fallen = 0;
+      } else {
+        this.fallen++;
+        this.fall();
+      }
     }
     resize() {
       this.canvas.width = $(window).width();
@@ -303,36 +306,73 @@ export function Canvas() {
         elem.index = ind;
       });
     }
-    set stopProcess(bool){
-        if (bool) this.stop();
-        else if (!bool && this.stopped) this.start();
-        this.stopped = bool;
+    set stopProcess(bool) {
+      if (bool) this.stop();
+      else if (!bool && this.stopped) this.start();
+      this.stopped = bool;
     }
-    set setHardness(hardness){
-      if (this.hardness.type==hardness) return;
-      var hard=this.hardness;
-      hard.speed-=10;
-      hard.generateFrequency-=2;
-      hard.maxGenerateNum+=2;
-      hard.min+=1;
-      this.hardness.type=hardness;
+    set setHardness(hardness) {
+      if (this.hardness.type == hardness) return;
+      var hard = this.hardness;
+      hard.speed -= 10;
+      hard.maxGenerateNum += 2;
+      if (hardness == `medium`) {
+        hard.generateFrequency -= 2;
+        hard.minGenerateNum += 1;
+      } else {
+        hard.generateFrequency -= 3;
+        hard.minGenerateNum += 2;
+      }
+      this.hardness.type = hardness;
       this.stop();
       this.start();
     }
   }
   useEffect(() => {
-    canvas.current= new createCanvas()
+    canvas.current = new createCanvas();
   }, []);
   useMemo(() => {
     if (canvas.current) {
       canvas.current.stopProcess = display.stopped;
-      canvas.current.setHardness=display.hardness;
+      canvas.current.setHardness = display.hardness;
     }
   }, [display.stopped]);
   return <canvas />;
 }
+export function Audio({ src, active }) {
+  var ref = useRef();
+  var [loaded, setLoaded] = useState(false);
+  var [display, setDisplay] = useContext(MainGame);
+  useEffect(() => {
+    if (!loaded) return;
+    if (active) ref.current.play();
+    else ref.current.pause();
+  });
+  function load() {
+    const timePercent = Math.round(
+      (ref.current.currentTime * 100) / ref.current.duration
+    );
+    var hardness;
+    if (timePercent < 30) hardness = `easy`;
+    else if (timePercent < 60) hardness = `medium`;
+    else hardness = `hard`;
+    setDisplay((curr) => {
+      return { ...curr, hardness: hardness };
+    });
+  }
+  return (
+    <audio
+      src={convert(src, null, true)}
+      muted
+      ref={ref}
+      onLoadedMetadata={() => setLoaded(true)}
+      onTimeUpdate={load}
+    />
+  );
+}
 export function GameMark({ gameMarkStatus }) {
   var [allowTime, setAllowTime] = useState(true);
+  const ref = useRef();
   const show = useRef({ style: {}, animate: "", text: "" }).current;
   var keys = Object.keys(gameMarkStatus);
   if (keys.length == 0) return null;
@@ -351,83 +391,109 @@ export function GameMark({ gameMarkStatus }) {
     setAllowTime(false);
   }
   function setShow() {
-    if (gameMarkStatus.global) {
-      var _ = [
-        { status: `start` },
-        { status: `stop` },
-        { status: `lost` },
-        { status: `won` },
-      ].forEach((elem) => {
-        if (gameMarkStatus.global == elem.status) {
-          show.style = elem.style;
-          show.text = elem.text;
-          show.animate = elem.animate;
+    const colors = {
+      black: `#2E4053`,
+      yellow: `#FCF3CF`,
+      orange: `#EDBB99`,
+      blue: `#2471A3`,
+      purple: `#6C3483`,
+      red: `#E74C3C`,
+    };
+    const status = {
+      hit: () => {
+        const { combo } = gameMarkStatus;
+        const text = (
+          <p style={{ fontFamily: "Are You Serious" }}>combo x {combo}</p>
+        );
+        if (combo < 5) {
+          show.text = `good`;
+          show.animate=``
+          createStyle(colors.purple);
+        } else if (combo > 5 && combo < 18) {
+          show.text = (
+            <>
+              <p>Great</p>
+              {text}
+            </>
+          );
+          show.animate=`great`
+          createStyle(colors.yellow, 700, 1.2);
+        } else {
+          show.text = (
+            <>
+              <p>Wonderful</p>
+              {text}
+            </>
+          );
+          show.animate=`wonderful`
+          createStyle(colors.orange, 900, 1.5);
         }
-      });
-    } else if (gameMarkStatus.events) {
-      if (gameMarkStatus.events == `health`) {
-        show.text = (
-          <>
-            <p>WARNING</p>
-            <p>Low health</p>
-          </>
-        );
-      } else {
+      },
+      miss: () => {
+        const { misses } = gameMarkStatus;
+        if (misses < 3) {
+          show.text = `Miss`;
+          createStyle(colors.red);
+          show.animate=``
+        } else if (misses > 3 && misses < 8) {
+          show.text = `Disgusting`;
+          show.animate = `disgusting`;
+          createStyle(colors.blue,700,1.3);
+        } else {
+          show.text = `Terrible`;
+          show.animate = `terrible`;
+          createStyle(colors.black, 900, 1.5);
+        }
+      },
+      global: () => {
+        var _ = [
+          { status: `start` },
+          { status: `stop` },
+          { status: `lost` },
+          { status: `won` },
+        ].forEach((elem) => {
+          if (gameMarkStatus.global == elem.status) {
+            elem.style();
+            show.text = elem.text;
+            show.animate = elem.animate;
+          }
+        });
+      },
+      events: () => {
+        if (gameMarkStatus.events == `health`) {
+          show.text = (
+            <>
+              <p>WARNING</p>
+              <p>Low health</p>
+            </>
+          );
+          show.animate = `warning`;
+          createStyle(colors.red, 900, 1.6);
+        } else {
+        }
       }
-    } else if (gameMarkStatus.miss) {
-      const { misses } = gameMarkStatus;
-      if (misses < 3) {
-        show.text = `Miss`;
-      } else if (misses > 3 && misses < 8) {
-        show.text = `Disgusting`;
-      } else {
-        show.text = `Terrible`;
-      }
-    } else if (!gameMarkStatus.miss) {
-      const { combo } = gameMarkStatus;
-      if (combo < 5) {
-        show.text = `good`;
-      } else if (combo > 5 && combo < 18) {
-        show.text = (
-          <>
-            <p>Great</p>
-            <p>combo x {combo}</p>
-          </>
-        );
-      } else {
-        show.text = (
-          <>
-            <p>Wonderful</p>
-            <p>combo x {combo}</p>
-          </>
-        );
-      }
+    };
+    if (gameMarkStatus.global) status.global();
+    else if (gameMarkStatus.events) status.events();
+    else if (gameMarkStatus.miss) status.miss();
+    else if (!gameMarkStatus.miss) status.hit();
+    function createStyle(color, fontWeight, size = 1) {
+      const obj = {};
+        var siz=parseInt(getComputedStyle(ref.current).fontSize) * size;
+        if (siz>90) {
+          alert(`error`) //**mistake
+        }
+        obj.color = color;
+        obj.fontSize = ref.current
+          ? parseInt(getComputedStyle(ref.current).fontSize) * size  + `px`
+          : ``;
+        obj.fontWeight = fontWeight ? fontWeight : ``;
+        show.style = { ...obj };
     }
   }
   return (
-    <h2 className={"game__mark" + show.animate} style={show.style}>
+    <h2 className={"game__mark " + show.animate} style={show.style} ref={ref}>
       {show.text}
     </h2>
   );
-}
-export function Audio({src,active}) {
-  var ref=useRef();
-  var [loaded,setLoaded]=useState(false);
-   var [display,setDisplay]=useContext(MainGame);
-  useEffect(()=>{
-    if (!loaded) return;
-    if (active) ref.current.play();
-    else ref.current.pause()
-  })
-  function load() {
-    const timePercent=Math.round(ref.current.currentTime*100/ref.current.duration);
-    var hardness;
-    if (timePercent<30) hardness=`easy`
-    else if (timePercent<60) hardness=`medium`
-    else hardness=`hard`
-    setDisplay((curr)=>{return {...curr,hardness:hardness}})
-  }
-  return (
-    <audio src={convert(src,null,true)} muted loop ref={ref} onLoadedMetadata={()=>setLoaded(true)} onTimeUpdate={load}/>
-  )
 }

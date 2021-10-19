@@ -167,7 +167,6 @@ function GameField({ decor }) {
       elem_.destroyed = true;
       elem_.code = CODE;
       this.changeDisplay();
-      console.log(this.arrowMass[column].type);
       setTimeout(() => {
         this.arrowMass[column].mass.forEach((elem, ind) => {
           if (elem.code == CODE) this.arrowMass[column].mass.splice(ind, 1);
