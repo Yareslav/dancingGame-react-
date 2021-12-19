@@ -10,7 +10,7 @@ import {
   useRef,
 } from "react";
 import { MainGame, shitCorrectsBugWithUseEffect } from "./Game";
-import { convert, random, log } from "./App";
+import { convert, random} from "./App";
 export default null;
 export function Pause() {
   var [display, setDisplay] = useContext(MainGame);
@@ -172,7 +172,7 @@ export function GameLine({ bestRecord }) {
           <p>* {display.coefficient}</p>
         </div>
         <p>
-          score : <span>{display.score}</span>
+          score : <span>{Math.floor(display.score)}</span>
         </p>
         <p>
           Best record : <span>{bestRecord}</span>
@@ -197,9 +197,9 @@ export function Canvas() {
     fallen;
     stopped = false;
     hardness = {
-      type: `easy`,
-      generateFrequency: 14,
-      speed: 60,
+      type: display.hardnessTypes.easy,
+      generateFrequency: 24,
+      speed: 70,
       minGenerateNum: 3,
       maxGenerateNum: 7,
     };
@@ -221,12 +221,11 @@ export function Canvas() {
     render() {
       if (this.fallen >= this.hardness.generateFrequency) {
         this.generate();
-        this.fall();
         this.fallen = 0;
       } else {
         this.fallen++;
-        this.fall();
       }
+      this.fall();
     }
     resize() {
       this.canvas.width = $(window).width();
@@ -312,17 +311,38 @@ export function Canvas() {
       this.stopped = bool;
     }
     set setHardness(hardness) {
-      if (this.hardness.type == hardness) return;
       var hard = this.hardness;
-      hard.speed -= 10;
-      hard.maxGenerateNum += 2;
-      if (hardness == `medium`) {
-        hard.generateFrequency -= 2;
-        hard.minGenerateNum += 1;
-      } else {
-        hard.generateFrequency -= 3;
-        hard.minGenerateNum += 2;
-      }
+      const {hardnessTypes}=display;
+      var _=[
+        {
+          hardness:hardnessTypes.medium,
+          generateFrequency:2,
+          speed:10,
+          minGenerateNum:2,
+          maxGenerateNum:2
+        },
+        {
+          hardness:hardnessTypes.hard,
+          generateFrequency:3,
+          speed:3,
+          minGenerateNum:3,
+          maxGenerateNum:2
+        },
+        {
+          hardness:hardnessTypes.extreme,
+          generateFrequency:3,
+          speed:5,
+          minGenerateNum:2,
+          maxGenerateNum:2
+        }
+      ].forEach((elem)=>{
+        if (elem.hardness==hardness) {
+          hard.generateFrequency -= elem.generateFrequency;
+          hard.speed -= elem.speed;
+          hard.minGenerateNum += elem.minGenerateNum;
+          hard.maxGenerateNum+=elem.maxGenerateNum;
+        }
+      })
       this.hardness.type = hardness;
       this.stop();
       this.start();
@@ -331,12 +351,12 @@ export function Canvas() {
   useEffect(() => {
     canvas.current = new createCanvas();
   }, []);
-  useMemo(() => {
-    if (canvas.current) {
+  useEffect(() => {
       canvas.current.stopProcess = display.stopped;
-      canvas.current.setHardness = display.hardness;
-    }
   }, [display.stopped]);
+  useEffect(()=>{
+    canvas.current.setHardness = display.hardness;
+  },[display.hardness])
   return <canvas />;
 }
 export function Audio({ src, active }) {
@@ -355,7 +375,8 @@ export function Audio({ src, active }) {
     var hardness;
     if (timePercent < 30) hardness = `easy`;
     else if (timePercent < 60) hardness = `medium`;
-    else hardness = `hard`;
+    else if (timePercent<90) hardness = `hard`;
+    else hardness=`extreme`;
     setDisplay((curr) => {
       return { ...curr, hardness: hardness };
     });
@@ -374,12 +395,11 @@ export function GameMark({ gameMarkStatus }) {
   var [allowTime, setAllowTime] = useState(true);
   const ref = useRef();
   const show = useRef({ style: {}, animate: "", text: "" }).current;
-  var keys = Object.keys(gameMarkStatus);
+  const keys = Object.keys(gameMarkStatus);
   if (keys.length == 0) return null;
   if (allowTime) {
     if (!gameMarkStatus.global)
-      setTimeout(
-        () => {
+      setTimeout(() => {
           keys.forEach((elem) => {
             delete gameMarkStatus[elem];
           });
@@ -409,7 +429,7 @@ export function GameMark({ gameMarkStatus }) {
           show.text = `good`;
           show.animate=``
           createStyle(colors.purple);
-        } else if (combo > 5 && combo < 18) {
+        } else if (combo >= 5 && combo < 18) {
           show.text = (
             <>
               <p>Great</p>
@@ -450,7 +470,7 @@ export function GameMark({ gameMarkStatus }) {
           { status: `start` },
           { status: `stop` },
           { status: `lost` },
-          { status: `won` },
+          { status: `won` }
         ].forEach((elem) => {
           if (gameMarkStatus.global == elem.status) {
             elem.style();
@@ -469,7 +489,6 @@ export function GameMark({ gameMarkStatus }) {
           );
           show.animate = `warning`;
           createStyle(colors.red, 900, 1.6);
-        } else {
         }
       }
     };
@@ -477,19 +496,19 @@ export function GameMark({ gameMarkStatus }) {
     else if (gameMarkStatus.events) status.events();
     else if (gameMarkStatus.miss) status.miss();
     else if (!gameMarkStatus.miss) status.hit();
-    function createStyle(color, fontWeight, size = 1) {
-      const obj = {};
-        var siz=parseInt(getComputedStyle(ref.current).fontSize) * size;
-        if (siz>90) {
-          alert(`error`) //**mistake
-        }
-        obj.color = color;
-        obj.fontSize = ref.current
-          ? parseInt(getComputedStyle(ref.current).fontSize) * size  + `px`
-          : ``;
-        obj.fontWeight = fontWeight ? fontWeight : ``;
-        show.style = { ...obj };
-    }
+  }
+  function createStyle(color, fontWeight, sizeСoefficient = 1) {
+      const obj = {
+        fontWeight:``,
+        fontSize:``
+      };
+      if (ref.current) {
+        const fontSize=parseInt(getComputedStyle(ref.current).fontSize) * sizeСoefficient ;
+        if (fontSize<90) obj.fontSize=fontSize + `px`;
+      }
+      if (fontWeight) obj.fontWeight=fontWeight;
+      obj.color = color;
+      show.style = { ...obj };
   }
   return (
     <h2 className={"game__mark " + show.animate} style={show.style} ref={ref}>

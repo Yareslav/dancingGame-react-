@@ -15,12 +15,11 @@ export const MainApp = createContext();
 export default function App() {
   var [state, setActive] = useState({
     active: true,
-    exception: 0,
+    exception: null,
   });
   return (
     <MainApp.Provider value={{ state, setActive }}>
       {state.active ? <Form /> : <Game />}
-      {/* <Game/> */}
     </MainApp.Provider>
   );
 }
@@ -31,48 +30,6 @@ export function convert(data, type = "png",sound) {
   if (!sound) return require(`./images/${data}.${type}`).default;
   else return require(`./audio/${data}.mp3`).default;
 }
-export function log(...mass) {
-  mass.forEach((elem)=>{
-    if (typeof (elem)==`object` && !Array.isArray(elem)) console.table(elem)
-    else if (Array.isArray(elem)) console.log(...elem);
-    else {
-      var _=[
-      {
-        type:"number",
-        fontWeight:600,
-        color:`#EA63F0`
-      },
-      {
-        type:"blight",
-        fontWeight:900,
-        color:`#DD161F`
-      },
-      {
-        type:"string",
-        fontWeight:100,
-        color:`#F8E30D`
-      },
-      {
-        type:"boolean",
-        fontWeight:900,
-        color:`#0D14F8`
-      },
-      {
-        type:"function",
-        fontWeight:400,
-        color:`#08ECC9`
-      },
-      {
-        type:"undefined",
-        fontWeight:900,
-        color:`#F70A0A`
-      },
-    ].forEach((item)=>{
-        if (typeof elem==item.type) console.log(`%c ${elem}`,`color:${item.color}; font-weight:${item.fontWeight}`);
-      })
-    }
-  })
-}
 function Form() {
   var location = useRef(JSON.parse(localStorage.getItem("locationsPoints")));
   location = location.current;
@@ -82,17 +39,14 @@ function Form() {
     {
       img: "beach",
       name: `Sunny Beach`,
-      speed:1
     },
     {
       img: "dance",
       name: `Dancing Scene`,
-      speed:1.2
     },
     {
       img: `retroCar`,
       name: `Cyber city`,
-      speed:1.3
     },
   ].forEach((elem, ind) => {
     maps.push(
@@ -140,13 +94,13 @@ function Form() {
           <span>{localStorage.getItem("money")}</span>
         </div>
         <p>
-          Cyber city : <span>{location.cyberCity}</span>
+          Cyber city : <span>{location["Cyber City"]}</span>
         </p>
         <p>
-          Sunny Beach : <span>{location.sunnyBeach}</span>
+          Sunny Beach : <span>{location["Sunny Beach"]}</span>
         </p>
         <p>
-          Dancing Scene : <span>{location.dancingScene}</span>
+          Dancing Scene : <span>{location["Dancing Scene"]}</span>
         </p>
       </div>
     </div>

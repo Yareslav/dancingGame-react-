@@ -10,10 +10,10 @@ import {
   useRef,
   createContext,
 } from "react";
-import { MainApp, convert, random,log } from "./App";
+import { MainApp, convert, random, log } from "./App";
 import * as Help from "./HelpComponents";
 export const MainGame = createContext();
-export const shitCorrectsBugWithUseEffect={display:{},allow:null}
+export const shitCorrectsBugWithUseEffect = { display: {}, allow: null };
 export default function Game() {
   const propsData = useContext(MainApp);
   var data = useRef({}).current;
@@ -21,8 +21,14 @@ export default function Game() {
     stopped: false,
     allowControl: false,
     reload: false,
-    allowSound:false,
-    //hardness:`easy`, //**can be mistake
+    allowSound: false,
+    hardness: `easy`,
+    hardnessTypes: {
+      easy: "easy",
+      medium: `medium`,
+      hard: `hard`,
+      extreme: `extreme`,
+    },
     //!!syncronise
     score: 0,
     coefficient: 1,
@@ -30,53 +36,58 @@ export default function Game() {
     //!!syncronise
   });
   useMemo(() => {
-    var _=[
+    var _ = [
       {
         type: "Sunny Beach",
         decorGif1: `dancingSpongeBob`,
         decorGif2: `dancingPatric`,
         fonImg: "beach",
-        speed: 80,
-        song:`Rumble`
+        speed: 50,
+        song: `Rumble`,
+        damage: 6,
       },
       {
         type: "Dancing Scene",
         decorGif1: `discoBall`,
         decorGif2: `dancingMan`,
         fonImg: `dance`,
-        speed: 70,
-        song:``
+        speed: 60,
+        song: `Caramelldansen`,
+        damage: 7,
       },
       {
         type: "Cyber City",
         decorGif1: `discoBall`,
         decorGif2: `dancingMan`,
         fonImg: `retroCar`,
-        speed:90,
-        song:``
-      }
-    ].forEach((elem,ind)=>{
-      if (propsData.state.exception==ind) {
+        speed: 40,
+        song: `Monster`,
+        damage: 5,
+      },
+    ].forEach((elem, ind) => {
+      if (propsData.state.exception == ind) {
         Object.entries(elem).forEach((elem) => {
           data[elem[0]] = elem[1];
         });
       }
-    })
-    data.bestRecord = JSON.parse(localStorage.getItem("locationsPoints"))[data.type];
+    });
+    data.bestRecord = JSON.parse(localStorage.getItem("locationsPoints"))[
+      data.type
+    ];
   }, []);
   useEffect(() => {
     setTimeout(() => {
-      setDisplay({ ...display, allowControl: true,allowSound:true });
+      setDisplay({ ...display, allowControl: true, allowSound: true });
     }, 3000);
   }, []);
-  shitCorrectsBugWithUseEffect.display=display;
+  shitCorrectsBugWithUseEffect.display = display;
   return (
     <MainGame.Provider value={[display, setDisplay]}>
       <div className="game beet2">
-        <Help.Audio src={data.song} active={display.allowSound}/>
+        <Help.Audio src={data.song} active={display.allowSound} />
         <Help.Canvas />
         <Help.GameLine bestRecord={data.bestRecord} />
-        <GameField  decor={data}/>
+        <GameField decor={data} />
         <Help.Health />
         <Help.Tips />
       </div>
@@ -89,34 +100,227 @@ function GameField({ decor }) {
   var [columns, setColumns] = useState([]);
   var [display, setDisplay] = useContext(MainGame);
   const gameMarkStatus = useRef({}).current;
+  class ProcessChangeGenerateStatus {
+    constructor(generateStatus) {
+      this.status = generateStatus;
+      const { hardnessTypes } = display;
+      const { types, statuses } = this.status;
+      var finalValue;
+      var _ = [
+        [hardnessTypes.easy, 15],
+        [hardnessTypes.medium, 10],
+        [hardnessTypes.hard, 8],
+        [hardnessTypes.extreme, 3],
+      ].forEach((elem) => {
+        if (display.hardness == elem[0]) finalValue = elem[1];
+      });
+      //*remove all generation settings
+      if (this.status.iterations == 0) {
+        this.status.status = statuses.normal;
+        this.status.type = types.random;
+      }
+      const randomNum = random(0, finalValue);
+      if (!(randomNum == 0 && this.status.iterations === 0)) return;
+      this.changeType();
+    }
+    changeType() {
+      return;
+      const { hardnessTypes } = display;
+      const { types, statuses } = this.status;
+      for (let key in hardnessTypes) {
+        if (hardnessTypes[key]==display.hardness) {
+          var boolMass = this.analyzePreviousTypes();
+          if (boolMass.oneType) {
+            this.status.type = types.oneType;
+          } else if (boolMass.twoType) {
+            this.status.type = types.twoType;
+          } else if (boolMass.allByOrder) {
+            this.status.type = types.allByOrder;
+          } else {
+            this.status.type = types.random;
+          }
+        }
+      }
+      this.status.previousElementsMass.push(this.status.type);
+      this.changeStatusAndSetIterations();
+    }
+    analyzePreviousTypes() {
+
+    }
+    changeStatusAndSetIterations() {
+      const { hardnessTypes } = display;
+      const { types, statuses } = this.status;
+      var _ = [
+        {
+          type: types.random,
+          cases: [
+            {
+              hardness: hardnessTypes.easy,
+              mass: [3, 60],
+              iterations: [20, 40],
+            },
+            {
+              hardness: hardnessTypes.medium,
+              mass: [3, 30],
+              iterations: [15, 30],
+            },
+            {
+              hardness: hardnessTypes.hard,
+              mass: [2, 5],
+              iterations: [0, 15],
+            },
+            {
+              hardness: hardnessTypes.extreme,
+              mass: [3, 1],
+              iterations: [7, 12],
+            },
+          ],
+        },
+        {
+          type: types.oneType,
+          cases: [
+            {
+              hardness: hardnessTypes.easy,
+              mass: [1, 3],
+              iterations: [13, 30],
+            },
+            {
+              hardness: hardnessTypes.medium,
+              mass: [2, 2],
+              iterations: [13, 25],
+            },
+            {
+              hardness: hardnessTypes.hard,
+              mass: [3, 1],
+              iterations: [10, 20],
+            },
+            {
+              hardness: hardnessTypes.extreme,
+              mass: [50, 0],
+              iterations: [15, 25],
+            },
+          ],
+        },
+        {
+          type: types.twoType,
+          cases: [
+            {
+              hardness: hardnessTypes.easy,
+              mass: [2, 1],
+              iterations: [8, 16],
+            },
+            {
+              hardness: hardnessTypes.medium,
+              mass: [2, 1],
+              iterations: [12, 24],
+            },
+            {
+              hardness: hardnessTypes.hard,
+              mass: [3, 0],
+              iterations: [16, 30],
+            },
+            {
+              hardness: hardnessTypes.extreme,
+              mass: [100, 0],
+              iterations: [13, 26],
+            },
+          ],
+        },
+        {
+          type: types.allByOrder,
+          cases: [
+            {
+              hardness: hardnessTypes.easy,
+              mass: [1, 4],
+              iterations: [15, 25],
+            },
+            {
+              hardness: hardnessTypes.medium,
+              mass: [2, 2],
+              iterations: [18, 27],
+            },
+            {
+              hardness: hardnessTypes.hard,
+              mass: [4, 1],
+              iterations: [20, 30],
+            },
+            {
+              hardness: hardnessTypes.extreme,
+              mass: [1, 1],
+              iterations: [30, 40],
+            },
+          ],
+        },
+      ].forEach((elem) => {
+        if (elem.type != this.status.type) return;
+        elem.cases.forEach((value) => {
+          if (value.hardness != value.hardness) return;
+          if (random(0, value.mass[0]) == 0)
+            this.status.status = statuses.medium;
+          else if (random(0, value.mass[1]) == 0)
+            this.status.status = statuses.spam;
+          else this.status.status = statuses.normal;
+          this.status.iterations = random(
+            value.iterations[0],
+            value.iterations[1]
+          );
+        });
+      });
+    }
+  }
   class Process {
-    mainInterval;
-    healthWarningInterval;
-    period = { normal: null, max: null };
+    intervals = {
+      healthWarning: null,
+      main: null,
+      changeGenerateStatus: null,
+    };
+    period = { normal: 0, max: null };
     health = { normal: 50, max: 50 };
     stopped = false;
     gameStatics = { combo: 0, coefficient: 1, score: 0, misses: 0 };
-    attributes = { speed: "", damage: "" };
+    attributes = { speed: 45, damage: null, maxRenderLimit: 15 };
     arrowMass = [];
     result;
+    generateStatus = {
+      previousElementsMass: [],
+      iterations: 0,
+      status: `normal`,
+      statuses: {
+        normal: 1,
+        medium: 0.7,
+        spam: 0.33,
+      },
+      type: `random`,
+      previousStatusMass: [],
+      types: {
+        random: `random`,
+        allByOrder: `allByOrder`,
+        oneType: `oneType`,
+        twoType: `twoType`,
+      },
+    };
     constructor({ speed, damage }) {
-      this.attributes.speed = speed;
-      this.attributes.damage = damage || 5;
-      this.period.normal = this.period.max = 45;
+      this.period.max = speed;
+      this.attributes.damage = damage;
       Object.entries(gameStat.colors).forEach((elem, ind) => {
         this.arrowMass.push({ type: elem[0], mass: [] });
       });
       this.setColumns();
-      setTimeout(() => {
-        this.start();
-      }, 3000);
+      setTimeout(() => this.start(), 3000);
     }
     start() {
-      this.mainInterval = setInterval(() => this.render(), 40); //this.speed
-      this.healthWarningInterval = setInterval(() => {
+      this.intervals.main = setInterval(
+        () => this.render(),
+        this.attributes.speed
+      );
+      this.intervals.healthWarning = setInterval(() => {
         if (this.health.normal < this.health.max / 4)
           gameMarkStatus.events = `health`;
       }, 5000);
+      this.intervals.changeGenerateStatus = setInterval(
+        () => new ProcessChangeGenerateStatus(this.generateStatus),
+        1000
+      );
     }
     render() {
       this.arrowMass.forEach((elem) => {
@@ -128,19 +332,65 @@ function GameField({ decor }) {
           if (!arrow.destroyed) arrow.y += 8;
         });
       });
-      if (this.period.normal == this.period.max) {
-        this.generate();
-        this.period.normal = 0;
-      } else this.period.normal++;
+      const { statuses } = this.generateStatus;
+      for (let key in statuses) {
+        if (statuses[key] != this.generateStatus.status) continue;
+        const value = Math.floor(this.period.max * statuses[key]);
+        if (value < this.attributes.maxRenderLimit)
+          value = this.attributes.maxRenderLimit;
+        if (this.period.normal >= value) {
+          this.generate();
+          this.period.normal = 0;
+        } else this.period.normal++;
+      }
       this.setColumns();
     }
     generate() {
-      var line = random(0, 3);
-      this.arrowMass[line].mass.unshift({ y: 0, destroyed: false });
+      const { type, previousElementsMass, types } = this.generateStatus;
+      if (this.generateStatus.iterations > 0) this.generateStatus.iterations--;
+      var index;
+      function generateCurrentElement(...indexes) {
+        var ind;
+        function getAmongIndexes() {
+          var value = false;
+          indexes.forEach((elem) => {
+            if (ind == elem) value = true;
+          });
+          return value;
+        }
+        do {
+          ind = random(0, 3);
+        } while (getAmongIndexes());
+        return ind;
+      }
+      if (type != types.random && previousElementsMass.length == 0) {
+        index = random(0, 3);
+        previousElementsMass.push(index);
+      } else {
+        if (type == types.random) index = random(0, 3);
+        else if (type == types.oneType) index = previousElementsMass[0];
+        else if (type == types.twoType) {
+          if (previousElementsMass.length == 1)
+            index = generateCurrentElement(previousElementsMass[0]);
+          else if (previousElementsMass.length == 2) {
+            index = previousElementsMass.shift();
+          }
+          previousElementsMass.push(index);
+        } else if (type == types.allByOrder) {
+          if (previousElementsMass.length == 4) {
+            index = previousElementsMass.shift();
+          } else {
+            index = generateCurrentElement(...previousElementsMass);
+          }
+          previousElementsMass.push(index);
+        }
+      }
+      this.arrowMass[index].mass.unshift({ y: 0, destroyed: false });
     }
     stop() {
-      clearInterval(this.mainInterval);
-      clearInterval(this.healthWarningInterval);
+      for (let key in this.intervals) {
+        clearInterval(this.intervals[key]);
+      }
       if (this.result)
         setDisplay((curr) => {
           return { ...curr, allowControl: false };
@@ -171,7 +421,7 @@ function GameField({ decor }) {
         this.arrowMass[column].mass.forEach((elem, ind) => {
           if (elem.code == CODE) this.arrowMass[column].mass.splice(ind, 1);
         });
-      }, 500);
+      }, 250);
       function generateCode() {
         var str = "";
         const alphabet = [
@@ -217,6 +467,10 @@ function GameField({ decor }) {
       else if (!bool && this.stopped) this.start();
       this.stopped = bool;
     }
+    set changePeriod(hardness) {
+      this.period.max = Math.ceil(this.period.max * 0.8);
+      this.period.normal = 0;
+    }
     changeDisplay(miss) {
       if (miss) {
         this.gameStatics.combo = 0;
@@ -256,33 +510,34 @@ function GameField({ decor }) {
     }
     changeHealth(miss) {
       var heal = 0;
+      const gameStatics = this.gameStatics;
+      const { normal } = this.health;
       if (miss) {
-        if (this.gameStatics.misses < 3) heal = -this.attributes.damage;
-        else if (this.gameStatics.misses > 3 && this.gameStatics.misses < 7)
+        if (gameStatics.misses < 3) heal = -this.attributes.damage;
+        else if (gameStatics.misses > 3 && gameStatics.misses < 7)
           heal = -this.attributes.damage * 2;
         else heal = -this.attributes.damage * 3;
       } else {
-        if (this.gameStatics.combo > 10 && this.gameStatics.combo < 20)
+        if (gameStatics.combo > 10 && gameStatics.combo < 20)
           heal = this.attributes.damage * 0.1;
-        else if (this.gameStatics.combo > 20) heal = this.attributes.damage;
+        else if (gameStatics.combo > 20) heal = this.attributes.damage;
       }
       this.health.normal += heal;
       this.health.normal = +this.health.normal.toFixed(1);
-      const { normal } = this.health;
       if (normal > this.health.max) this.health.normal = this.health.max;
       else if (normal < 0) this.health.normal = 0;
     }
   }
   useEffect(() => {
     resize();
-    $(window).on(`resize`,resize)
+    $(window).on(`resize`, resize);
     function resize() {
-      $(`.game__field`).css({height:$(window).height()*0.8})
+      $(`.game__field`).css({ height: $(window).height() * 0.8 });
     }
     processControl.current = new Process(gameStat);
   }, []);
   useMemo(() => {
-    gameStat.current={...decor};
+    gameStat.current = { ...decor };
     gameStat.current.colors = {
       red: `231, 76, 60`,
       green: `7,194,18`,
@@ -300,13 +555,21 @@ function GameField({ decor }) {
     if (processControl.current)
       processControl.current.stopProcess = display.stopped;
   }, [display.stopped]);
-  gameStat=gameStat.current;
+  useMemo(() => {
+    if (processControl.current)
+      processControl.current.changePeriod = display.hardness;
+  }, [display.hardness]);
+  gameStat = gameStat.current;
   return (
     <div
       className="game__field beet"
       onMouseDown={(eve) => eve.preventDefault()}
     >
-      <img className="game__gif" src={convert(gameStat.decorGif1, "gif")} id="first"/>
+      <img
+        className="game__gif"
+        src={convert(gameStat.decorGif1, "gif")}
+        id="first"
+      />
       <div
         className="game__process beet"
         style={{ backgroundImage: `url(${convert(gameStat.fonImg, "gif")})` }}
@@ -314,7 +577,12 @@ function GameField({ decor }) {
         <Help.GameMark gameMarkStatus={gameMarkStatus} />
         <div className="game__columns beet">{columns}</div>
       </div>
-      <img src className="game__gif" src={convert(gameStat.decorGif2, "gif")} id="last"/>
+      <img
+        src
+        className="game__gif"
+        src={convert(gameStat.decorGif2, "gif")}
+        id="last"
+      />
     </div>
   );
 }
@@ -330,7 +598,7 @@ function FieldColumn({ color, keys, arrowStatus, destroy }) {
     if (arrowMass.length == 0 || notAnimatedObj.length == 0 || display.stopped)
       return;
     y = notAnimatedObj[notAnimatedObj.length - 1].y;
-    const height_ = $(`.game__arrow`).height()*0.5;
+    const height_ = $(`.game__arrow`).height() * 0.5;
     y += height_;
     if (y >= state.circleY && y <= $(`.game__field`).height() + height_ * 0.45)
       destroy(arrowMass.length - 1);
@@ -391,8 +659,8 @@ function Arrow({ type, arrowClick, destroyed, y, color }) {
     if (!destroyed || ignore) return;
     const columnWidth = $(`.game__column`).width();
     const elem = $(animatedObject.current);
-    elem.animate({ width: columnWidth, height: columnWidth }, 250, () => {
-      elem.animate({ width: 0, height: 0 }, 250);
+    elem.animate({ width: columnWidth, height: columnWidth }, 125, () => {
+      elem.animate({ width: 0, height: 0 }, 125);
     });
     setIgnore(true);
   });
